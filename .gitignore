@@ -1,12 +1,18 @@
 # Xcode
-build/
-DerivedData/
-*.xcuserstate
 xcuserdata/
+DerivedData/
+.derivedData/
+
+# Swift Package Manager
+.build/
+*.swiftpm/
+.swiftpm/
 
 # macOS
 .DS_Store
 
-# Swift Package Manager
-.build/
-.swiftpm/
+# Cursor (keep shared project rules)
+.cursor/*
+!.cursor/rules/
+
+xcuserdata/
