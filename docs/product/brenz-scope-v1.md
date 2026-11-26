@@ -417,9 +417,9 @@ Reviewed on Nov 26. All closed.
 18. Create the project: Xcode (iOS 17), Firebase project (Auth with email, Firestore, Remote Config), `GoogleService-Info.plist`, Cursor (Fri Nov 27).
 19. Message bank and app texts in English: Claude draft and tone review by Bren (Tue Dec 1).
 20. Close in Spec Kit: exact names of the stored enums and where the last used discipline lives (section 7).
-21. [NEW Nov 26] Translate the remaining product documents to English and rename them: `brenz-mockups-v1.md`, `brenz-message-bank.md` (from the Spanish message bank), `brenz-assets.md` and `brenz-assets-table.md`.
+21. [DONE Nov 26] Translate the remaining product documents to English and rename them: `brenz-mockups-v1.md`, `brenz-message-bank.md`, `brenz-assets.md` and `brenz-assets-table.md`.
 
-Changes to make in the project instructions (Bren makes them): update the source-of-truth list to the English file names, and state that all documentation, file names, code and identifiers are in English with no Spanglish.
+Project instructions: updated on Nov 26 with the English file names and the language rule (all documentation, file names, code and identifiers in English, no Spanglish).
 
 ## Sources
 
