@@ -1,0 +1,20 @@
+---
+description: How to build, run and debug Brenz from Cursor (SweetPad to run on the simulator and read logs; Xcode MCP for everything else). Apply when building, running the app, reading logs, debugging or choosing between SweetPad and Xcode MCP.
+alwaysApply: false
+---
+
+# Brenz run tools
+
+## Rules
+- Use SweetPad to build, run on the simulator and read logs.
+- Use Xcode MCP for the other Xcode tasks.
+- Use the shared scheme `Brenz`.
+- Run only one build tool at a time.
+- Test Auth and Firestore on the simulator, with the Firestore emulator when it applies.
+- Build for an iPhone simulator, not a device, unless asked.
+
+## Forbidden
+- Do not build with SweetPad and Xcode MCP at the same time.
+- Do not change the Xcode MCP configuration.
+- Do not edit `.xcodeproj` by hand. Use Xcode MCP.
+- Do not commit `buildServer.json` or `.sweetpad/` unless decided otherwise.

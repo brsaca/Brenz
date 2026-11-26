@@ -1,0 +1,32 @@
+---
+description: Brenz Domain layer: entities, enums, state and stage calculators, BoardLayout, VersionComparator, use cases, repository protocols, catalogs and message selection. Apply when creating or editing code in Domain/.
+alwaysApply: false
+---
+
+# Brenz Domain
+
+Source: `@docs/architecture/brenz-architecture-domain.md`. Rule values: `@docs/product/brenz-scope-v1.md`, section 4.
+
+## Rules
+- Declare entities as immutable `struct`s with a non-optional `id: String`.
+- Entities: `ClassLog`, `WaterLog`, `UserProfile`, `Character`, `BoardElement`, `BoardTheme`, `AuthUser`.
+- `Discipline.allCases` returns only the 4 valid ones. `.unknown` is not shown or written back.
+- `PetState` cases: `animated`, `normal`, `down`, `lazy`.
+- Calculate state, stage, tatami and version with pure functions. Pass `now` and `Calendar` as parameters.
+- `StageCalculator` returns the greater of the calculated stage and `stageReached`.
+- Do not store the character state. It is always calculated.
+- Create one use case per action. Each one is a `struct` with an `execute` method.
+- Return `AsyncStream` from read use cases.
+- Declare repositories as protocols: `AuthRepository`, `TrainingRepository`, `ProfileRepository`, `RulesConfigRepository`, `MessageRotationStore`, `CatalogProvider`, `ReminderScheduler`.
+- Return `MessageKey` (group and index). Do not return text.
+- Choose the state message once per state and local day. No repeats until the 5 are exhausted.
+- (T) messages only if there is no class today.
+- Return the event message from `RegisterClass` and the water message from `AddWaterGlass` and `RemoveWaterGlass`.
+- Name assets `{character}_{stage}_{state}`. Resolve the day's element by (discipline, day) and then by (day).
+
+## Forbidden
+- Do not import Firebase, SwiftUI or UIKit in Domain.
+- Do not read `Date()` or `Calendar.current` inside the rules.
+- Do not return visible text from Domain.
+- Do not add use cases outside the list without deciding it.
+- Do not create repositories for the fixed-data catalogs.

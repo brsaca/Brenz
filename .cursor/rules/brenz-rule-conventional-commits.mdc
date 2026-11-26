@@ -1,0 +1,46 @@
+---
+description: Conventional Commits in English for GitHub commits
+alwaysApply: true
+---
+
+# Conventional Commits
+
+When creating git commits (and when pushing to GitHub), write commit messages in **English** following [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+
+## Format
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+## Types
+
+- `feat`: new feature
+- `fix`: bug fix
+- `docs`: documentation only
+- `style`: formatting (no code change)
+- `refactor`: neither fix nor feature
+- `perf`: performance improvement
+- `test`: adding or fixing tests
+- `build`: build system or dependencies
+- `ci`: CI configuration
+- `chore`: maintenance tasks
+
+## Rules
+
+- Description in English, imperative mood, concise
+- Do not capitalize the first letter of the description
+- No period at the end of the subject line
+- Use `BREAKING CHANGE:` footer or `!` after type/scope when applicable
+
+## Examples
+
+```
+chore: add gitignore for Xcode and Cursor
+feat(paywall): show trial period on subscribe screen
+fix(storekit): handle failed purchase restoration
+```

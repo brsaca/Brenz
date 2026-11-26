@@ -1,0 +1,33 @@
+---
+description: Language and naming conventions for Brenz. Code, identifiers, comments, file names, docs, rules and commit messages are in English, with no Spanglish. Apply when creating files, naming types, tokens, enums, keys or assets, or writing documentation.
+alwaysApply: false
+---
+
+# Brenz language and naming
+
+## Rules
+- Write documentation, rules, decisions, comments, commit messages, file names and folder names in English.
+- Write types, functions, variables, enums, tokens, Firestore fields and String Catalog keys in English.
+- Keep user-facing Spanish only in `Localizable.xcstrings` (`es`). English is the base (`en`).
+- Name the same concept with the same word everywhere. Do not mix synonyms.
+- Use the glossary below for product terms.
+- Write quoted UI copy in a doc as the `es` string and mark it `(es)`.
+- Name files `brenz-<topic>.md`, `brenz-architecture-<layer>.md` and `brenz-rule-<topic>.mdc`.
+
+## Glossary (product term → code term)
+- class (training session) → `class` in prose, `ClassLog` in code
+- glass of water → `WaterLog`
+- character → `Character`; pet state → `PetState`
+- states: animado → `animated`, normal → `normal`, decaído → `down`, flojera → `lazy`
+- stage → `Stage` (key 1, 2, 3). Names live in the catalog (`stage.1.name`).
+- board → `DayBoard`; tile → tile; slab → slab; row → row; cell → cell
+- bubble → speech bubble
+- Home tab "Entrena" → Train; "Historial" → History; "Ajustes" → Settings
+- Inicio → Start; Introducción → Intro; Crear cuenta → Sign Up; Iniciar sesión → Sign In; Recuperar contraseña → Reset Password; Cambiar contraseña → Change Password; Borrar cuenta → Delete Account; Cerrar sesión → Sign Out
+- Colors: fondo → `background`; superficie → `surface`; superficieAlta → `surfaceHigh`; acento → `accent`; agua → `water`; texto → `textPrimary`; textoSecundario → `textSecondary`; borde → `border`; tarjetaPersonaje → `characterCard`; peligro → `danger`; línea → `line` (art only)
+
+## Forbidden
+- Do not use Spanish or mixed-language identifiers (`registrarClase`, `claseLog`, `fondoColor`).
+- Do not write Spanish in code comments, commit messages or documentation.
+- Do not name files with Spanish words.
+- Do not hardcode visible text in code, in either language.

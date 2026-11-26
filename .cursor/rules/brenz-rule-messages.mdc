@@ -1,0 +1,40 @@
+---
+description: Brenz character messages: bank of 44 messages, sarcastic voice, no-repeat rotation, water messages, events (return, stage, new user, midday) and String Catalog keys in Spanish and English. Apply when creating or editing messages, MessageSelector, MessageRotationStore, the Home speech bubble or message.* keys.
+alwaysApply: false
+---
+
+# Brenz messages
+
+Source: `@docs/product/brenz-message-bank.md` and `@docs/architecture/brenz-architecture-domain.md` (Messages section).
+
+## Voice rules
+- Write in first person. No nickname.
+- Aim sarcasm at the action, never at the person.
+- Do not mention work, office or clothing.
+- Talk about classes, consistency and training.
+- Failure messages: acknowledge the fact, observe the habit, propose a small step.
+
+## Logic rules
+- Choose the state message once per state and day. It lasts the whole day.
+- Rotate without repeating until the 5 of the state are exhausted. Store the used indexes.
+- Water rotation: only avoid repeating the previous one of the same group.
+- Priority when adding water: goal reached, half, add one glass.
+- Half of the goal: with the user's goal (4 to 16), round up.
+- Animated only because of water: show the goal-reached message.
+- "Dropped below the goal": only if the state went down from animated to normal. Otherwise, "One glass less".
+- (T) messages of normal: only if there is no class today.
+- Water messages: about 4 s in the bubble, then the base message returns. They open the bubble even if it is closed.
+- "No glasses at midday": after 12:00 local, with 0 glasses, once per day.
+- "New user": only with no classes and only once.
+
+## Keys and text
+- Name keys `message.<group>.<n>`. Example: `message.state.animated.1`.
+- Write each message in `en` and `es`.
+- Replace the stage placeholder of the bank with `%1$@`. Pass the stage name (`stage.1.name`) as the argument.
+- Test that every `MessageKey` exists in both languages.
+
+## Forbidden
+- Do not write the stage name by hand in a message.
+- Do not use a nickname placeholder or the nickname in any message.
+- Do not choose messages in the view or in the ViewModel.
+- Do not store the rotation in Firestore.

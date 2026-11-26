@@ -1,0 +1,31 @@
+---
+description: Brenz Presentation layer: RootViewModel and root screen, navigation, ViewModels, localized text in Spanish and English (String Catalog), animations and Reduce Motion, DayBoard. Apply when creating or editing screens, ViewModels, routes, text or animations.
+alwaysApply: false
+---
+
+# Brenz Presentation
+
+Source: `@docs/architecture/brenz-architecture-presentation.md`. Design: `@docs/product/brenz-design-system-decision.md`.
+
+## Rules
+- Decide the root screen in `RootViewModel`: splash, welcome flow (no session), onboarding (profile without `onboardingCompleted`), Home with tab bar.
+- Use one `NavigationStack` per tab and one route `enum` per feature. Open sheets with `.sheet`.
+- Start reads with `.task` in the view.
+- Publish errors as an optional `AuthError` or `AppError`. Use `isSubmitting` in forms.
+- Keep ViewModels free of message logic: they only display the resolved `MessageKey`.
+- Resolve keys with `String(localized: String.LocalizationValue(key))`. With arguments, use `String(format:)` and positional specifiers (`%1$@`).
+- Add the dynamic message keys to the catalog with state "manual", in `en` and `es`.
+- Pass `LocalizedStringResource` to fixed texts of `BrenzDesignSystem`. Pass `String` to dynamic texts (message, nickname, figures).
+- Animate with native SwiftUI. Read motion and springs from the package tokens.
+- Apply the package "Reduce Motion" modifier to every animation.
+- Put `DayBoard` in `Presentation/Shared/`.
+- Put the flow to delete a log in the History feature.
+
+## Forbidden
+- Do not import Firebase in Presentation.
+- Do not write visible text in code or fixed colors.
+- Do not choose messages inside a ViewModel.
+- Do not use `Combine`.
+- Do not add Lottie or another animation library.
+- Do not translate the character nickname.
+- Do not add loading screens in Home and History.

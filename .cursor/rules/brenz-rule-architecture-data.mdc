@@ -1,0 +1,35 @@
+---
+description: Brenz Data layer: Firestore (users, classLogs, waterLogs), DTOs and mapping, security rules, Remote Config, Firebase Auth, offline writes, sign out, delete account, local reminders and message rotation. Apply when creating or editing code in Data/ or firebase/.
+alwaysApply: false
+---
+
+# Brenz Data
+
+Source: `@docs/architecture/brenz-architecture-data.md`.
+
+## Rules
+- Use the path `users/{uid}` with subcollections `classLogs` and `waterLogs`.
+- Store one document per class and one document per glass, with `registeredAt` as the device `Date`.
+- Create one DTO per document with `Codable`, `toEntity()` and `init(entity)`.
+- Read `@DocumentID var id: String?`. Throw an error in `toEntity()` if the `id` is nil.
+- Generate the id on create with `document().documentID`.
+- Store enums as `String`. Convert with the `.unknown` fallback in `toEntity()`.
+- Calculate the local day on the device with `Calendar`.
+- Write optimistically: return without waiting for the server on classes and water.
+- Wait for the server only in `DeleteAccount`, `ChangePassword` and `SignIn`.
+- Translate Firebase errors to `AuthError` and `DataError`. Log with `os.Logger`.
+- Sign out in this order: wait for writes (3 s), sign out of Auth, clear the Firestore cache, delete the user's `UserDefaults`, cancel reminders, rebuild repositories.
+- Delete the account in this order: reauthenticate, delete Firestore data in batches, delete the Auth user, clean local data.
+- Read Remote Config in the background. Interval 12 h in production, 0 in debug. Validate each value and use the default if it is out of range.
+- Store `MessageRotationStore` in `UserDefaults`, per user.
+- Schedule one weekly reminder per chosen day. Request permission only when it is turned on. Reconcile on app open.
+- Keep the Firestore rules in `firebase/` with emulator tests.
+
+## Forbidden
+- Do not use `@ServerTimestamp` in `registeredAt`.
+- Do not invent a `UUID` when the `id` is missing.
+- Do not store message rotation in Firestore.
+- Do not allow editing `registeredAt` or `elementId` of a class in the rules.
+- Do not expose Firebase types outside `Data/Firebase/`.
+- Do not add Analytics or Crashlytics.
+- Do not raise `min_version` before Apple approves that version.

@@ -1,0 +1,33 @@
+---
+description: Brenz base architecture (iOS 17, MVVM with @Observable, AppContainer, folder structure, allowed packages, errors, tests, language). Apply when creating the project, adding files or folders, adding dependencies, writing tests or deciding where new code goes.
+alwaysApply: false
+---
+
+# Brenz base architecture
+
+Source: `@docs/architecture/brenz-architecture-base.md`.
+
+## Rules
+- Target iOS 17 as the minimum.
+- Use MVVM with `@Observable @MainActor final class` for every ViewModel.
+- Create repositories and use cases only in `AppContainer`. Inject it through `Environment` from `BrenzApp`.
+- Pass use cases to ViewModels through the initializer.
+- Organize by layer: `App/`, `Core/`, `Domain/`, `Data/`, `Presentation/`, `Resources/`.
+- Inside `Domain/`: `Entities/`, `Rules/`, `UseCases/`, `Repositories/` (protocols only).
+- Inside `Data/`: `Firebase/` and `Local/`.
+- Put views that use entities and are shared across features in `Presentation/Shared/`.
+- Add Firebase only through Swift Package Manager: `FirebaseAuth`, `FirebaseFirestore`, `FirebaseRemoteConfig`.
+- Use `os.Logger`, one `Logger` per layer, without email or nickname.
+- Write tests with Swift Testing. Use fake repositories for Domain and ViewModels.
+- Keep Firestore rules and emulator tests in `firebase/`.
+- Write all visible text in `Localizable.xcstrings` (`en` base, `es`).
+- Write code, identifiers, comments, file names and documentation in English.
+
+## Forbidden
+- Do not add third-party libraries (Factory, Swinject, TCA, Lottie, Analytics, Crashlytics).
+- Do not use `Combine`.
+- Do not create SPM modules per layer. The only exception is `Packages/BrenzDesignSystem/`.
+- Do not import Firebase outside `Data/Firebase/`.
+- Do not write visible text in code.
+- Do not add UI tests in v1.
+- Do not put theme or colors in `Core/`. They live in `BrenzDesignSystem`.

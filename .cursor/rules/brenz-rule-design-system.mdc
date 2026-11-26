@@ -1,0 +1,49 @@
+---
+description: Brenz design system rules (BrenzDesignSystem). Apply when creating or editing SwiftUI views, components, colors, typography, dark theme, tab bar, floating sheets or destructive buttons.
+alwaysApply: false
+---
+
+# Brenz Design System
+
+Source: `@docs/product/brenz-design-system-decision.md`.
+
+## Rules
+
+- Use `BrenzDesignSystem` (`Packages/BrenzDesignSystem/`) for colors, typography, spacing and components.
+- Read the theme with `@Environment(\.theme)`.
+- Use semantic tokens: `background`, `surface`, `surfaceHigh`, `accent`, `water`, `tatami`, `textPrimary`, `textSecondary`, `border`, `characterCard`, `danger`.
+- Load package resources with `bundle: .module`.
+- Change the shape of a control with `ButtonStyle`, `LabelStyle` or `ViewModifier`.
+- Mark `public` only what the app consumes.
+- Add `#Preview` to every public component.
+- Use Dynamic Type styles.
+- Use the interface in dark mode only.
+- Use `BrenzTabBar` for navigation (Train, History, Settings). Translucent background with `Material`.
+- Use the package floating translucent sheet for discipline, class log and confirmations. Radius 40, blur, darkened background behind.
+- Use `danger` only in destructive actions: solid fill with `background` text to confirm, or `danger` text on `danger` at 16 % for the secondary button.
+- Show the result of an action with `BrenzSuccessMark` (animated checkmark). With "Reduce Motion", no animation.
+- Read springs and durations from the package motion tokens. Apply the "Reduce Motion" modifier to every animation.
+- Receive fixed texts as `LocalizedStringResource` and dynamic texts as `String`.
+- Keep boards and speech bubbles without a border.
+
+## Forbidden
+
+- Do not use fixed colors (`Color(red:...)`, hex, `Color.green`, `Color.red`) in views.
+- Do not import Firebase or app modules inside the package.
+- Do not pass domain entities (`Character`, `BoardElement`, `BoardTheme`) to the package. Pass simple data.
+- Do not add external dependencies to the package.
+- Do not create more targets in the package.
+- Do not write visible text literals inside the package.
+- Do not move `DayBoard` into the package. It lives in `Presentation/Shared/`.
+- Do not add light mode in v1.
+- Do not use the `line` token in the interface. It is art only.
+- Do not use `danger` in actions that do not destroy data.
+- Do not put the delete-log flow inside the package. It lives in the History feature.
+
+## Where new code goes
+
+- Component without logic: `Packages/BrenzDesignSystem/Sources/BrenzDesignSystem/Components/`.
+- Reusable style: `.../Styles/`.
+- New token (color, spacing, motion): `.../Tokens/` and Asset Catalog in `.../Resources/`.
+- View with logic or entities, shared across features: `Presentation/Shared/`.
+- View with logic for a single feature: `Presentation/<Feature>/`.
