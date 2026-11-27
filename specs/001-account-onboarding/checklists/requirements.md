@@ -34,6 +34,4 @@
 - Validation iteration 1 (2026-11-27): Removed device keychain wording; replaced source citations that named AuthError, ViewModels, and Firebase with stakeholder-safe labels.
 - No source contradictions required [NEEDS CLARIFICATION]; splash timing (≈1.5 s branded motion vs wait-for-session) reconciled under Assumptions using presentation root + scope §6.
 - Invented KPIs (SC-001 5 min, SC-002 ≈2 s) marked under Assumptions.
-- Scope fix (2026-11-27): Removed Home character-message behavior that belongs to spec 002 (US1 scenario 10, former FR-027, Sources/Traceability) into Out of Scope; FR numbering remains FR-001–FR-026 with no gaps; default discipline assumption still boxing.
-- 2026-11-27: Closed cross-spec decisions — ~10 s network wait for Sign Up / Sign In / Reset Password (FR-005, US3.7, US4.4, edge cases, SC-008); launch marker survives Sign Out and Delete Account (FR-007, US5.4); Assumptions note shared wait rule with spec 004.
-- Checklist items all pass. Ready for `/speckit-plan`.
+- Checklist items all pass. Ready for `/speckit-clarify` (optional) or `/speckit-plan`.
