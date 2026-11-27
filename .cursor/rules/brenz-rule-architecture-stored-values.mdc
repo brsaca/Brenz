@@ -16,7 +16,7 @@ Source: `@docs/architecture/brenz-architecture-stored-values.md`. This source wi
 - Store `elementId` as an integer from 1 to 7.
 - Store reminder days as integers 1 to 7. Monday = 1, Sunday = 7.
 - Convert `Calendar` weekdays (Sunday = 1) to Monday = 1 in one Domain function.
-- Add `lastDiscipline` (optional) to `UserProfile` and to `users/{uid}`. Update it inside `RegisterClass`. Fall back to the first `selectedDisciplines` value when `lastDiscipline` is missing or not selected.
+- Add `lastDiscipline` (optional) to `UserProfile` and to `users/{uid}`. Update it inside `RegisterClass`. Selecting a discipline in the Home discipline sheet also writes `lastDiscipline` (one profile write, no class registered). Changing the discipline of an existing class (History) does NOT write `lastDiscipline`. Fall back to the first `selectedDisciplines` value when `lastDiscipline` is missing or not selected. "First discipline of `selectedDisciplines`" means the first in catalog order (boxing, jiu_jitsu, muay_thai, kickboxing), not the first selected by time. `selectedDisciplines` is stored in catalog order. A test covers selecting kickboxing then boxing: the first discipline is boxing.
 - Calculate `elementId` once in `RegisterClass`: `((dayIndex + weekIndex) mod 7) + 1`.
 - `dayIndex`: Monday = 0 … Sunday = 6, from the class local date.
 - `weekIndex`: whole weeks from Monday 2026-01-05 to the Monday of the class week.
