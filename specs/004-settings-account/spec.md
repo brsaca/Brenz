@@ -12,11 +12,11 @@
 
 ### Session 2026-11-27
 
-- Q: On successful account deletion, which user data must be removed from the service besides the authentication credential? → A: User document + all classLogs + all waterLogs + auth account
-- Q: Where must the Support, Terms, and Privacy Policy URLs that Settings opens come from? → A: Local constants / embedded app configuration
-- Q: At which moments must the minimum-version lock be evaluated (when included in the build)? → A: Cold start and every time the app enters foreground
-- Q: When Delete Account or Change Password cannot complete because of the network, how long must the app wait before showing the no-network message? → A: Wait up to ~10 seconds for the server, then show no-network
-- Q: Before completing Sign Out, how long must the app attempt to finish pending sync? → A: Attempt sync up to ~3 seconds, then clear local and sign out anyway (data architecture)
+- Q: Al borrar la cuenta con éxito, ¿qué datos del usuario deben eliminarse del servicio además de la credencial de autenticación? → A: User document + all classLogs + all waterLogs + auth account
+- Q: ¿De dónde deben salir las URLs de Support, Terms y Privacy Policy que abre Settings? → A: Local constants / embedded app configuration
+- Q: ¿En qué momentos debe evaluarse el bloqueo por versión mínima (si está incluido en el build)? → A: Cold start and every time the app enters foreground
+- Q: Cuando Delete Account o Change Password no pueden completar por red, ¿cuánto debe esperar la app antes de mostrar el mensaje de sin red? → A: Wait up to ~10 seconds for the server, then show no-network
+- Q: Antes de completar Sign Out, ¿cuánto debe intentar la app terminar el sync pendiente? → A: Attempt sync up to ~3 seconds, then clear local and sign out anyway (data architecture)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -85,7 +85,7 @@ A signed-in user edits nickname (max 10 characters, optional), selected discipli
 
 1. **Given** Settings Character section, **When** the user sets a nickname of at most 10 characters (or clears it), **Then** the value is saved and Home shows or hides the nickname line accordingly; a 10-character nickname does not clip or break layout.
 2. **Given** Training disciplines with at least one selected, **When** the user tries to deselect the last remaining discipline, **Then** at least one discipline remains selected.
-3. **Given** the last used discipline is among the selected set, **When** the user removes that discipline from the selection, **Then** Home falls back to the first selected discipline in fixed catalog order for logging defaults.
+3. **Given** the last used discipline is among the selected set, **When** the user removes that discipline from the selection, **Then** Home falls back to the first selected discipline for logging defaults.
 4. **Given** water goal between 4 and 16, **When** the user changes the goal, **Then** Home uses the new goal for the bottle and water rules immediately.
 5. **Given** today's glass count already meets or exceeds a newly lowered goal, **When** the goal is saved, **Then** Home recalculates today's water-related state with the new goal (glasses already logged stay; no error screen).
 6. **Given** the reminder is off, **When** the user turns it on and picks days and time, **Then** the app requests notification permission only at that moment and schedules reminders if allowed.
@@ -135,7 +135,7 @@ When the installed app version is lower than the configured minimum version, a l
 - **Offline change password**: Waits up to ~10 seconds for the server; shows no-network; does not change the password.
 - **Sign out offline with unsynced classes**: Attempts pending sync up to 3 seconds, then proceeds without alert; unsynced classes may be lost (accepted risk). Reminders are still cancelled and local data cleared.
 - **Reminder permission denied**: Reminder remains off; notice plus path to system Settings; no silent “on” state.
-- **Removing the last used discipline**: Selection keeps at least one discipline; Home uses the first selected discipline in fixed catalog order when the previous last-used value is no longer selected.
+- **Removing the last used discipline**: Selection keeps at least one discipline; Home uses the first selected discipline when the previous last-used value is no longer selected.
 - **Water goal lowered below today's glass count**: Glasses remain; Home recalculates against the new goal (goal may already be met); no error or rollback UI.
 - **Nickname at 10 characters**: Accepted maximum; UI does not clip or break; empty nickname hides the nickname line.
 - **Cancel on delete confirmation**: Closes the sheet; Settings unchanged.
@@ -147,19 +147,19 @@ When the installed app version is lower than the configured minimum version, a l
 
 - **FR-001**: Settings MUST be available only with a signed-in session. This feature replaces the Settings placeholder from the core-loop shell. *(Source: scope §3 Settings, §6 Settings, §11 item 2; mockups Flow / Settings)*
 - **FR-002**: Settings MUST present sections Character (nickname), Training (disciplines, reminder, water goal), Account (email, Change Password, Delete Account), and More (Support, Rate the app, Sign Out), plus a footer with app icon, version, Terms, and Privacy Policy. *(Source: scope §6 Settings; mockups Settings (7))*
-- **FR-003**: Sign Out MUST NOT show a confirmation alert. It MUST end the session, clear local data, except the launch marker, cancel reminders, and return to Start. Cloud progress that already synced MUST remain. *(Source: scope §3 Sign Out, §11 items 5–6; data Sign out; domain SignOut)*
+- **FR-003**: Sign Out MUST NOT show a confirmation alert. It MUST end the session, clear local data, cancel reminders, and return to Start. Cloud progress that already synced MUST remain. *(Source: scope §3 Sign Out, §11 items 5–6; data Sign out; domain SignOut)*
 - **FR-004**: Sign Out while offline with unsynced classes MAY lose those classes. This is an accepted risk. No alert. *(Source: scope §3 / §7; data Sign out)*
 - **FR-005**: Before finishing Sign Out, the app MUST attempt to finish pending sync for up to 3 seconds, then proceed with local cleanup even if sync cannot complete. *(Source: data Sign out — behavior only; Clarifications 2026-11-27)*
 - **FR-006**: Delete Account MUST open confirmation sheet 7b (password field with eye, destructive confirm inactive when empty, Cancel leaves Settings unchanged). *(Source: scope §6 Delete Account 7b; mockups 7b / Delete Account rules)*
-- **FR-007**: On Delete Account confirm, the app MUST reauthenticate with the current password first; only then delete the user document, all class logs and water logs for that user, then delete the authentication account; then clear local data, except the launch marker, like Sign Out and show success 7c. *(Source: scope §6 7b–7c; mockups Delete Account rules; data Delete account; domain DeleteAccount; Clarifications 2026-11-27)*
+- **FR-007**: On Delete Account confirm, the app MUST reauthenticate with the current password first; only then delete the user document, all class logs and water logs for that user, then delete the authentication account; then clear local state like Sign Out and show success 7c. *(Source: scope §6 7b–7c; mockups Delete Account rules; data Delete account; domain DeleteAccount; Clarifications 2026-11-27)*
 - **FR-008**: Wrong password on Delete Account MUST leave data intact and show error 7e on the field. *(Source: scope §6 7e; mockups 7e)*
 - **FR-009**: Delete Account success (7c) MUST show account-deleted content with a lime progress bar that completes in about 2.5 seconds, then open Start with no session or local data. Reduce Motion MUST skip the animation. *(Source: scope §6 7c; mockups 7c — product bar duration from scope; mockup “4 s loop” describes the prototype only)*
 - **FR-010**: Change Password MUST be a full screen (7d) with current, new, and repeat fields (each with eye), notice that new password needs 8+ characters, update button enabled only when all fields are filled, new password has 8+ characters, and repeat matches; no recovery link. *(Source: scope §6 7d; mockups 7d / Change Password rules; domain ChangePassword)*
 - **FR-011**: Change Password MUST show error 7g for wrong current password and 7h for mismatched repeat. *(Source: scope §6 7g–7h; mockups Change Password rules)*
 - **FR-012**: Change Password success MUST show sheet 7i over darkened Settings with the same success pattern as account deleted (~2.5 s bar), then close so Settings remains. Reduce Motion MUST skip the animation. *(Source: scope §6 7i; mockups 7i)*
-- **FR-013**: Sign In, Delete Account and Change Password MUST wait for the server up to ~10 seconds; after that they MUST show a no-network message and MUST NOT complete the sensitive action. Other Settings preference edits MUST apply immediately (optimistic). Server rejection of optimistic writes MUST NOT be shown to the user in v1. *(Source: scope §7; data Offline writes; Clarifications 2026-11-27)*
+- **FR-013**: Delete Account, Change Password, and Sign In MUST wait for the server (up to ~10 seconds for Delete Account and Change Password network failure); when they cannot complete they MUST show a no-network message and MUST NOT complete the sensitive action. Other Settings preference edits MUST apply immediately (optimistic). Server rejection of optimistic writes MUST NOT be shown to the user in v1. *(Source: scope §7; data Offline writes; Clarifications 2026-11-27)*
 - **FR-014**: Nickname MUST be optional, maximum 10 characters, editable in Character; empty hides the nickname line; it is never translated; character messages MUST NOT use it. *(Source: scope §6 Nickname; domain UserProfile / UpdateProfile)*
-- **FR-015**: Selected disciplines MUST keep at least one. If the last used discipline is removed from the selection, Home MUST fall back to the first selected discipline in fixed catalog order. *(Source: stored-values Last used discipline; domain UpdateProfile; scope §6 Training)*
+- **FR-015**: Selected disciplines MUST keep at least one. If the last used discipline is removed from the selection, Home MUST fall back to the first selected discipline. *(Source: stored-values Last used discipline; domain UpdateProfile; scope §6 Training)*
 - **FR-016**: Water goal MUST be editable from 4 to 16 glasses (default 8 from product rules). Changes MUST apply on Home. *(Source: scope §4 water goal, §6 Settings; domain UserProfile)*
 - **FR-017**: Reminder (days and time) MUST request notification permission only when turned on. If denied, reminder stays off with a notice and a way to open system Settings. Reminders MUST be cancelled on Sign Out and Delete Account. On app open, reminder schedule MUST reconcile with the profile. *(Source: scope §3 reminder, §6 onboarding/Settings; data ReminderScheduler / Sign out / Delete account; domain ReminderScheduler)*
 - **FR-018**: Support, Terms, and Privacy Policy MUST open as external pages whose URLs come from local constants / embedded app configuration (not Remote Config). Rate the app MUST use the system review dialog. Footer MUST show icon and version. *(Source: scope §3 Settings links, §6 Settings, §9 Store checklist; mockups Settings (7); Clarifications 2026-11-27)*
@@ -172,7 +172,7 @@ When the installed app version is lower than the configured minimum version, a l
 - **User profile (preferences)**: Nickname (optional, max 10), selected disciplines (one or more of the four training disciplines), last used discipline (optional; falls back to first selected), water goal (4–16), reminder (days Monday=1…Sunday=7 and time; empty when off), email (display only in Account).
 - **Account session**: Signed-in email/password session required for Settings; ended by Sign Out or Delete Account.
 - **Minimum version policy**: Remote minimum app version compared to installed version on cold start and every foreground entry; invalid/missing treated as allowing all installs.
-- **Local device state**: Cached progress, preference cache, message-rotation flags, and scheduled reminders cleared on Sign Out and Delete Account. The launch marker is not cleared.
+- **Local device state**: Cached progress, preference cache, message-rotation flags, and scheduled reminders cleared on Sign Out and Delete Account.
 
 ## Success Criteria *(mandatory)*
 
