@@ -270,7 +270,7 @@ Summary:
 - [DECIDED] Packages: Firebase through SPM with `FirebaseAuth`, `FirebaseFirestore` and `FirebaseRemoteConfig`. No Analytics or Crashlytics.
 - [DECIDED] Firestore: `users/{uid}`, `users/{uid}/classLogs/{id}` and `users/{uid}/waterLogs/{id}`. One document per class and one document per glass.
 - [DECIDED] Security rules: everything denied by default. Only the owner accesses, with a session. Validations for discipline, element, time, nickname, water goal and stage.
-- [DECIDED] Optimistic writes: the app does not wait for the server on classes and water. `DeleteAccount`, `ChangePassword` and `SignIn` do wait.
+- [DECIDED] Optimistic writes: the app does not wait for the server on classes and water. `SignUp`, `SignIn`, `ResetPassword`, `ChangePassword` and `DeleteAccount` wait up to ~10 s, then show no network.
 - [DECIDED] Authentication: email with password only (Firebase Auth), behind a protocol. The session survives reinstalling the app.
 - [DECIDED] Sign out and delete account: order defined in `brenz-architecture-data.md`. Sign out can lose unsynced classes if there is no network. Accepted risk.
 - [DECIDED] Message rotation: on the device (`UserDefaults`), not in Firestore. "Once" flags included.
