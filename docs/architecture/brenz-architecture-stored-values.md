@@ -4,7 +4,7 @@ Date: 2026-11-27
 Status: closed by Bren. No code.
 Repo location: `docs/architecture/brenz-architecture-stored-values.md`
 Base: `brenz-architecture-domain.md`, `brenz-architecture-data.md`.
-Precedence: this document wins over the domain, data and scope documents where they differ (scope section 6 "Board elements", section 7 pending items, section 12 item 20).
+Precedence: this document wins over the domain, data and scope documents where they differ (scope section 3 "Manual class log" on one class per tap, section 6 "Board elements", section 7 pending items, section 12 item 20).
 
 ## Stored enum values
 - [DECIDED] Values are lowercase snake_case text. Once published, they never change.
@@ -23,6 +23,7 @@ Precedence: this document wins over the domain, data and scope documents where t
 - [DECIDED] Field `lastDiscipline` in `users/{uid}`. Optional text. Same 4 valid values.
 - `RegisterClass` updates `lastDiscipline` in the same operation.
 - If the field is missing, use the first discipline of `selectedDisciplines`.
+- If `lastDiscipline` is not among `selectedDisciplines`, use the first discipline of `selectedDisciplines`.
 - Profile security rules validate the 4 values.
 - Rejected: `UserDefaults`. Sign out deletes it and it does not survive a device change.
 - `UserProfile` entity gains `lastDiscipline` (optional).
@@ -50,7 +51,20 @@ Precedence: this document wins over the domain, data and scope documents where t
 - No new art. Same 7 images.
 - "Monday = glove" holds only in week 0.
 
+## Class registration limit
+- [DECIDED Nov 27] A day has at most one class per local clock hour (for example 14:00 to 14:59). Several classes per day still count, each in a different hour.
+- The hour is the local clock hour of `registeredAt`, on the local day of the class.
+- `RegisterClass` checks the day's classes before writing. If one exists in the same local clock hour, it writes nothing and returns a distinct outcome (`alreadyLoggedThisHour`).
+- Home shows a short system notice (catalog key, `en` and `es`) when the outcome is returned. It is not a character message. No Undo is offered.
+- Undo (Home) and delete (History) free the hour.
+- Changing the discipline of a class does not change its hour.
+- The check runs on the device with `Calendar`. Firestore rules do not enforce it.
+- Two devices can still create two classes in the same hour while offline. History orders the day's classes by `registeredAt` ascending, then by log id ascending.
+
 ## Constraints
+- Do not use a rolling 60-minute window for the class limit.
+- Do not add a character message for a rejected class.
+- Do not enforce the class limit in Firestore rules.
 - Do not use random values for the element.
 - Do not read `Date()` or `Calendar.current` inside the element function.
 - Do not store the week index.
@@ -63,6 +77,10 @@ Precedence: this document wins over the domain, data and scope documents where t
 - A class keeps its `elementId` after its discipline changes.
 - Two devices show the same element for the same class date.
 - Unknown discipline text reads as `.unknown` and is not written back.
+- A test covers a second class in the same local clock hour: rejected, nothing written.
+- A test covers classes at 14:59 and 15:00: both accepted.
+- A test covers Undo and delete: the hour is free again.
+- A test covers two classes with the same hour and different ids: ordered by `registeredAt`, then by id.
 
 ## Cut order
 - If time is short: fixed order (week index = 0 always). Same function, constant `weekIndex`. Add this as cut 0.5, after the `min_version` lock screen and before the intro animations.
