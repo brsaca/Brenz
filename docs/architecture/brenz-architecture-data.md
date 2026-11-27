@@ -67,7 +67,7 @@ users/{uid}/waterLogs/{logId}   one glass
 - [DECIDED] Optimistic writes. The repository writes to the local cache and returns without waiting for the server.
 - [DECIDED] Reads emit from the cache instantly.
 - [DECIDED] If the server rejects a write, the error is logged. The user is not notified in v1.
-- [DECIDED] `DeleteAccount`, `ChangePassword` and `SignIn` do wait for the server. Offline they show "no network".
+- [DECIDED] `SignUp`, `SignIn`, `ResetPassword`, `ChangePassword` and `DeleteAccount` wait for the server up to ~10 s. After that they show "no network" and complete nothing.
 
 ## Sign out
 Order:
@@ -77,6 +77,7 @@ Order:
 4. Delete the user's `UserDefaults`, including message rotation.
 5. Cancel the reminders.
 6. Rebuild the repositories and go back to Start.
+- `hasLaunchedBefore` is not deleted. It is not user data.
 - [ACCEPTED] If there is no network and classes remain unsynced, those classes are lost. It is rare. No alert, per the scope.
 
 ## Delete account
@@ -85,6 +86,7 @@ Order:
 2. Delete the Firestore data (`classLogs`, `waterLogs`, profile). Firestore does not delete subcollections on its own: delete in batches.
 3. Delete the Auth user.
 4. Same steps 3 to 6 as sign out.
+- `hasLaunchedBefore` is not deleted. It is not user data.
 - If it fails midway, the user retries. Data is deleted first so no orphans are left.
 
 ## Local (`Data/Local/`)
