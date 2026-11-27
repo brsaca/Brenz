@@ -16,10 +16,10 @@ Source: `@docs/architecture/brenz-architecture-data.md`.
 - Store enums as `String`. Convert with the `.unknown` fallback in `toEntity()`.
 - Calculate the local day on the device with `Calendar`.
 - Write optimistically: return without waiting for the server on classes and water.
-- Wait for the server only in `DeleteAccount`, `ChangePassword` and `SignIn`.
+- `SignUp`, `SignIn`, `ResetPassword`, `ChangePassword` and `DeleteAccount` wait for the server up to ~10 s. After that they show "no network" and complete nothing.
 - Translate Firebase errors to `AuthError` and `DataError`. Log with `os.Logger`.
-- Sign out in this order: wait for writes (3 s), sign out of Auth, clear the Firestore cache, delete the user's `UserDefaults`, cancel reminders, rebuild repositories.
-- Delete the account in this order: reauthenticate, delete Firestore data in batches, delete the Auth user, clean local data.
+- Sign out in this order: wait for writes (3 s), sign out of Auth, clear the Firestore cache, delete the user's `UserDefaults`, cancel reminders, rebuild repositories. `hasLaunchedBefore` is not deleted. It is not user data.
+- Delete the account in this order: reauthenticate, delete Firestore data in batches, delete the Auth user, clean local data. `hasLaunchedBefore` is not deleted. It is not user data.
 - Read Remote Config in the background. Interval 12 h in production, 0 in debug. Validate each value and use the default if it is out of range.
 - Store `MessageRotationStore` in `UserDefaults`, per user.
 - Schedule one weekly reminder per chosen day. Request permission only when it is turned on. Reconcile on app open.
