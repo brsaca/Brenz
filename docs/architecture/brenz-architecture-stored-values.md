@@ -22,6 +22,8 @@ Precedence: this document wins over the domain, data and scope documents where t
 ## Last used discipline
 - [DECIDED] Field `lastDiscipline` in `users/{uid}`. Optional text. Same 4 valid values.
 - `RegisterClass` updates `lastDiscipline` in the same operation.
+- Selecting a discipline in the Home discipline sheet also writes `lastDiscipline` (one profile write, no class registered).
+- Changing the discipline of an existing class (History) does NOT write `lastDiscipline`.
 - If the field is missing, use the first discipline of `selectedDisciplines`.
 - If `lastDiscipline` is not among `selectedDisciplines`, use the first discipline of `selectedDisciplines`.
 - Profile security rules validate the 4 values.
@@ -81,6 +83,8 @@ Precedence: this document wins over the domain, data and scope documents where t
 - A test covers classes at 14:59 and 15:00: both accepted.
 - A test covers Undo and delete: the hour is free again.
 - A test covers two classes with the same hour and different ids: ordered by `registeredAt`, then by id.
+- A test covers selecting a discipline in the Home sheet: persists `lastDiscipline` without creating a class log.
+- A test covers editing a class discipline: leaves `lastDiscipline` unchanged.
 
 ## Cut order
 - If time is short: fixed order (week index = 0 always). Same function, constant `weekIndex`. Add this as cut 0.5, after the `min_version` lock screen and before the intro animations.
