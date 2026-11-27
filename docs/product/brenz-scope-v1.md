@@ -1,6 +1,6 @@
 # Brenz — Scope and decision status (v1)
 
-Date: 2026-11-26 (revision 21)
+Date: 2026-11-27 (revision 22)
 Status: logic, flow, messages and architecture closed. v1 in Spanish and English. Account with email only. Firestore as the only source. Mockups v1 aligned with email only. Message bank closed (`docs/product/brenz-message-bank.md`), English version pending. Schedule re-estimated: build 40–53 h against 47 h available. Spec Kit follows (Fri Nov 27, together with project creation). Art for 7 board elements missing (Sat Nov 28). No code.
 Revision 21: document translated to English. File names, paths and token names are now English. Quoted UI copy is the `es` string (marked `(es)`). The `en` copy is drafted with the message bank (Tue Dec 1).
 
@@ -35,7 +35,7 @@ Architecture (Nov 26): `docs/architecture/brenz-architecture-base.md`, `-domain.
 
 In:
 - [DECIDED] 4 fixed disciplines, with one as the default.
-- [DECIDED] Manual class log, one tap, today only, with "Undo" for 5 s. Several classes per day count: each tap adds one (same dynamic as Forest).
+- [DECIDED] Manual class log, one tap, today only, with "Undo" for 5 s. Several classes per day count, at most one per local clock hour. A second tap in the same hour registers nothing and shows a short system notice.
 - [DECIDED] The main Home button is "Fui a clase" (es) (Nov 26). No "+" button in the tab bar in v1. No long press in Home. If the pilot shows confusion, change the text to "Registrar clase" (es). The "+" is re-evaluated in v1.1, when there are two or more log actions.
 - [DECIDED] Each log stores date and time. History groups the hours into 3-hour blocks.
 - [DECIDED] Edit or delete a logged class (Nov 26): in History, tapping a tatami cell opens a translucent sheet from the bottom with two actions. Change the discipline and delete the log. Neither time nor date is edited. Delete asks for confirmation and shows a class-deleted animation. Mockups 6b to 6e.
@@ -240,8 +240,8 @@ Nickname:
 - [DECIDED] Character messages do not use the nickname (Nov 26). The nickname is never translated.
 
 Board elements (option B):
-- [DECIDED] 7 elements, one per day of the week, shared by the 4 disciplines.
-- [DECIDED] Monday boxing glove. Tuesday hand wraps. Wednesday heavy bag. Thursday shin guards. Friday mouthguard. Saturday jump rope. Sunday pads (Nov 26: the round bell is out).
+- [DECIDED] 7 elements, shared by the 4 disciplines.
+- [DECIDED] Element rotates weekly. See brenz-architecture-stored-values.md. Monday = boxing glove holds only in week 0.
 - [DECIDED] The day is taken from the local date of the class.
 - The sports bottle is not a board element. It is the water indicator.
 - Changing the discipline of a log does not change its element: the element depends on the day.
@@ -281,7 +281,7 @@ Summary:
 - [DECIDED] Tests with Swift Testing in Domain and ViewModels. Firestore rules with the emulator. No UI tests in v1.
 - [DECIDED Nov 26] Documentation, file names, code and identifiers in English. No Spanglish.
 - [REMOVED] Daily water document with counter. Rotation in Firestore. Native `TabView` (stays as a cut). "V1 `es` only".
-- [PENDING, close in Spec Kit] Exact names of the stored enum values. Where the last used discipline is stored (proposal: `lastDiscipline` in `UserProfile`).
+- [DECIDED Nov 27] See brenz-architecture-stored-values.md. Exact names of the stored enum values. Where the last used discipline is stored (proposal: `lastDiscipline` in `UserProfile`).
 - Each layer behind a protocol (Clean Architecture). Firebase is a replaceable implementation.
 
 ## 8. Schedule (availability: 8–10 h per day; December Fridays minimum 5 h)
@@ -329,7 +329,7 @@ Build re-estimate (Nov 26, Claude's assumptions):
 - Available from Nov 30 to Dec 7: 47 h (Mon 30: 5, Tue 1: 9, Wed 2: 9, Thu 3: 9, Fri 4: 6, Mon 7: 9). The range covers 40–53 h. The upper bound does not fit. That is why the cut order stays in force.
 - If Saturday Nov 28 is not worked: the assets move to Monday the 30th and implementation day 1 disappears. 42 h remain available.
 - External TestFlight: the first build needs Apple's beta review. If it is delayed, the pilot moves to Thursday the 10th.
-- Cut order (proposed, see `brenz-architecture-base.md`): 0) lock screen for `min_version`. 1) Intro animations (a static fade version remains). 2) History hourly charts (totals remain). 3) Tatami growth (fixed at 2 rows). 4) Change password inside the app (only email recovery remains). 5) Animations for class deleted, account deleted and password updated (confirmations and refresh remain). 6) Change the discipline of a log (only delete remains). 7) `BrenzTabBar` replaced by native `TabView` (saves 2–3 h). 8) Last resort: ship in Spanish only (the catalog stays ready).
+- Cut order (proposed, see `brenz-architecture-base.md`): 0) lock screen for `min_version`. 0.5) fixed element order (weekIndex = 0). 1) Intro animations (a static fade version remains). 2) History hourly charts (totals remain). 3) Tatami growth (fixed at 2 rows). 4) Change password inside the app (only email recovery remains). 5) Animations for class deleted, account deleted and password updated (confirmations and refresh remain). 6) Change the discipline of a log (only delete remains). 7) `BrenzTabBar` replaced by native `TabView` (saves 2–3 h). 8) Last resort: ship in Spanish only (the catalog stays ready).
 - [DECIDED] Last day to submit for review: Dec 15. If it does not arrive, scope is cut. The date does not move.
 - [DECIDED] Publication: as soon as Apple approves, in mid-December.
 - [PROPOSED] Configure the release to go live automatically on approval.
@@ -416,7 +416,7 @@ Reviewed on Nov 26. All closed.
 17. Review `docs/product/brenz-assets-table.md` before Saturday the 28th.
 18. Create the project: Xcode (iOS 17), Firebase project (Auth with email, Firestore, Remote Config), `GoogleService-Info.plist`, Cursor (Fri Nov 27).
 19. Message bank and app texts in English: Claude draft and tone review by Bren (Tue Dec 1).
-20. Close in Spec Kit: exact names of the stored enums and where the last used discipline lives (section 7).
+20. [DONE Nov 27] Close in Spec Kit: exact names of the stored enums and where the last used discipline lives (section 7).
 21. [DONE Nov 26] Translate the remaining product documents to English and rename them: `brenz-mockups-v1.md`, `brenz-message-bank.md`, `brenz-assets.md` and `brenz-assets-table.md`.
 
 Project instructions: updated on Nov 26 with the English file names and the language rule (all documentation, file names, code and identifiers in English, no Spanglish).
