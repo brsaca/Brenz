@@ -1,5 +1,5 @@
 ---
-description: Brenz stored enum values, lastDiscipline field, reminder day numbering and weekly board element rotation (elementId formula). Apply when creating or editing Discipline, ClassLog, UserProfile, DTOs, Firestore rules or the element calculation.
+description: Brenz stored enum values, lastDiscipline field, reminder day numbering and weekly board element rotation (elementId formula) and the one-class-per-hour limit. Apply when creating or editing Discipline, ClassLog, UserProfile, RegisterClass, DTOs, Firestore rules or the element calculation.
 alwaysApply: false
 ---
 
@@ -16,12 +16,16 @@ Source: `@docs/architecture/brenz-architecture-stored-values.md`. This source wi
 - Store `elementId` as an integer from 1 to 7.
 - Store reminder days as integers 1 to 7. Monday = 1, Sunday = 7.
 - Convert `Calendar` weekdays (Sunday = 1) to Monday = 1 in one Domain function.
-- Add `lastDiscipline` (optional) to `UserProfile` and to `users/{uid}`. Update it inside `RegisterClass`. Fall back to the first `selectedDisciplines` value.
+- Add `lastDiscipline` (optional) to `UserProfile` and to `users/{uid}`. Update it inside `RegisterClass`. Fall back to the first `selectedDisciplines` value when `lastDiscipline` is missing or not selected.
 - Calculate `elementId` once in `RegisterClass`: `((dayIndex + weekIndex) mod 7) + 1`.
 - `dayIndex`: Monday = 0 … Sunday = 6, from the class local date.
 - `weekIndex`: whole weeks from Monday 2026-01-05 to the Monday of the class week.
 - Name the catalog field `baseOrder` (1 to 7). Do not use `weekday`.
 - Look up the element by (discipline, `elementId`), then by `elementId`.
+- Allow at most one class per local clock hour of the local day. `RegisterClass` checks first. If one exists, write nothing and return `alreadyLoggedThisHour`.
+- Show a short system notice from the catalog for `alreadyLoggedThisHour`. Offer no Undo.
+- Free the hour on Undo and on delete.
+- Order a day's classes by `registeredAt` ascending, then by log id ascending.
 
 ## Forbidden
 - Do not use random values or the ISO week number for the element.
@@ -30,3 +34,6 @@ Source: `@docs/architecture/brenz-architecture-stored-values.md`. This source wi
 - Do not change `elementId` when the discipline changes.
 - Do not store `lastDiscipline` in `UserDefaults`.
 - Do not add Remote Config keys for the rotation.
+- Do not use a rolling 60-minute window for the class limit.
+- Do not add a character message for a rejected class.
+- Do not enforce the class limit in Firestore rules.
