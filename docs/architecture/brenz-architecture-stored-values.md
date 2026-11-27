@@ -26,6 +26,8 @@ Precedence: this document wins over the domain, data and scope documents where t
 - Changing the discipline of an existing class (History) does NOT write `lastDiscipline`.
 - If the field is missing, use the first discipline of `selectedDisciplines`.
 - If `lastDiscipline` is not among `selectedDisciplines`, use the first discipline of `selectedDisciplines`.
+- "First discipline of `selectedDisciplines`" means the first in catalog order (boxing, jiu_jitsu, muay_thai, kickboxing), not the first selected by time.
+- `selectedDisciplines` is stored in catalog order.
 - Profile security rules validate the 4 values.
 - Rejected: `UserDefaults`. Sign out deletes it and it does not survive a device change.
 - `UserProfile` entity gains `lastDiscipline` (optional).
@@ -85,6 +87,7 @@ Precedence: this document wins over the domain, data and scope documents where t
 - A test covers two classes with the same hour and different ids: ordered by `registeredAt`, then by id.
 - A test covers selecting a discipline in the Home sheet: persists `lastDiscipline` without creating a class log.
 - A test covers editing a class discipline: leaves `lastDiscipline` unchanged.
+- A test covers selecting kickboxing then boxing: the first discipline is boxing.
 
 ## Cut order
 - If time is short: fixed order (week index = 0 always). Same function, constant `weekIndex`. Add this as cut 0.5, after the `min_version` lock screen and before the intro animations.
