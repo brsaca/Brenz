@@ -44,7 +44,7 @@ A signed-in user on Home taps the main training button once. The character react
 4. **Given** the user already logged one or more classes today, **When** they tap the main class button in a later local clock hour than the previous class of the day, **Then** another class is added (several classes per day count, at most one per local clock hour) and another cell is filled.
 5. **Given** the user has no network, **When** they tap the main class button, **Then** the class is registered immediately without waiting for the network and the board updates at once.
 6. **Given** a class is registered for a local calendar day, **When** that day is viewed later or on another device for the same account, **Then** the same board element is associated with that class (element depends on the class’s local date and weekly rotation; changing the class’s discipline later does not change its element).
-7. **Given** a class was registered in the current local clock hour, **When** the user taps the main class button, **Then** no class is registered, a short notice is shown, and no Undo is offered.
+7. **Given** a class was registered in the current local clock hour, **When** the user taps the main class button, **Then** no class is registered, a short notice is shown, and no Undo is offered. The same-hour rejection notice does not cancel or hide the Undo of the previous class while its 5 s window is open.
 8. **Given** the last class was undone, **When** the user taps again in the same hour, **Then** a class is registered.
 
 ---
@@ -66,7 +66,7 @@ The character’s state is always derived from recent classes and today’s wate
 5. **Given** 7 or more days without a class, **When** state is calculated, **Then** the pet is lazy.
 6. **Given** base state normal and today’s water glasses meet the user’s water goal, **When** state is calculated for today, **Then** the pet is animated for that day only; water never lowers state by itself.
 7. **Given** the pet was animated only because of water and the user removes a glass so today’s count is below the goal, **When** state is recalculated, **Then** the pet returns to normal for today.
-8. **Given** the user reaches 10 accumulated classes, **When** that class is registered, **Then** stage becomes stage 2, the stage line updates, and stage never decreases afterward even if a class is undone or later deleted elsewhere.
+8. **Given** the user reaches 10 accumulated classes, **When** that class is registered, **Then** stage becomes stage 2, the stage line updates, and stage never decreases afterward even if a class is undone or later deleted elsewhere. The stage-change message shows once per stage reached. Undo and re-registering the class that reached the threshold does not show it again.
 9. **Given** the pet is lazy, **When** the user logs the next class, **Then** state returns toward normal/animated per the class rules (no separate reset control).
 10. **Given** a nickname is set, **When** Home shows the character, **Then** nickname and stage line appear under the character (stage 1 style: stage name · class N of 10; stage 2 style: stage name · N classes). **Given** nickname is empty, **When** Home shows the character, **Then** the nickname line is omitted.
 11. **Given** Reduce Motion is on, **When** the user logs a class or changes state, **Then** bounce/spin-style motion is replaced by a simple fade or no motion, and the correct state and stage art still appear.
@@ -130,7 +130,7 @@ The user changes the active discipline from the Home chip and a single-selection
 
 1. **Given** two or more selected disciplines, **When** Home is shown, **Then** a discipline chip shows the current (last used if still selected, otherwise first selected; or first selected if none remembered) discipline.
 2. **Given** the chip is visible, **When** the user taps it, **Then** a floating translucent single-selection sheet lists the user’s selected disciplines.
-3. **Given** the sheet is open, **When** the user selects another discipline, **Then** that discipline becomes current for the next class log and is remembered as last used.
+3. **Given** the sheet is open, **When** the user selects another discipline, **Then** that discipline becomes current for the next class log and is remembered as last used, even if the user leaves Home without logging a class.
 4. **Given** exactly one selected discipline, **When** Home is shown, **Then** the discipline chip is hidden.
 5. **Given** a remembered last-used discipline that is no longer in the user’s selected disciplines, **When** Home resolves the current discipline, **Then** it uses the first selected discipline for the chip (if shown) and for the next class log.
 6. **Given** a previously logged class, **When** the user later changes only that class’s discipline (out of scope here, History), **Then** that class’s board element remains the one fixed at registration time (behavior constraint for this feature’s stored element).
@@ -183,12 +183,12 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **Glasses above water goal**: Bottle fill stays visually full; fraction text shows true count over goal; + remains allowed.
 - **State change after a class is registered**: Pet art, stage line, and eligible messages update immediately after the log (including return-after-lazy and stage-change events when they apply).
 - **First launch with no classes**: Normal state, empty tatami (outlined cells), new-user message eligible once, water at 0/goal, main button ready; no weekly goal pressure.
-- **Undo last class that caused stage up**: Stage reached does not go down; state recalculates from remaining classes.
+- **Undo last class that caused stage up**: Stage reached does not go down; state recalculates from remaining classes. The stage-change message shows once per stage reached. Undo and re-registering the class that reached the threshold does not show it again.
 - **Only one selected discipline**: Discipline chip hidden; logging still uses that discipline.
 - **Last-used discipline no longer selected**: Resolve to the first selected discipline for chip and next class log.
 - **Bubble closed then state changes**: Bubble may show again for the new state/day rules; water taps always can reopen it for ~4 s.
 - **New-user and midday both eligible**: Show new-user only for that Home open; midday may appear on a later open the same day after new-user is no longer eligible.
-- **Second tap in the same hour**: No class is registered; a short system notice is shown; Undo is not offered.
+- **Second tap in the same hour**: No class is registered; a short system notice is shown; Undo is not offered. The same-hour rejection notice does not cancel or hide the Undo of the previous class while its 5 s window is open.
 - **Classes at 14:59 and 15:00**: Both are accepted (different local clock hours).
 - **Undo frees the hour**: After undoing the last class, a tap in the same local clock hour registers a class again.
 
@@ -214,9 +214,9 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **FR-016**: Closing the bubble with X MUST hide it until pet state or local day changes, except water messages which MUST reopen it. Sources: scope §6 Interactions [PROPOSED] Bubble X; message bank Logic rules.
 - **FR-017**: Messages MUST be first person, MUST NOT use the nickname, MUST exist in Spanish and English, and MUST follow content rules (sarcasm at actions; no guilt/punishment/mockery; no work/office/clothing; pet does not die). Sources: scope §5; message bank Voice rules.
 - **FR-018**: Nickname (optional, max 10 characters, not translated) and stage line MUST show under the character when a nickname exists; omit the nickname line when empty. Sources: scope §6 Nickname, Home.
-- **FR-019**: Discipline chip and sheet MUST remember last used discipline for logging; if none is remembered, or the remembered value is not among the user’s selected disciplines, Home MUST use the first selected discipline; chip hidden when only one discipline is selected; sheet is floating, translucent, single selection. Sources: scope §6 Home, Sheet; stored values Last used discipline; mockups Discipline sheet.
+- **FR-019**: Discipline chip and sheet MUST remember last used discipline for logging; selecting a discipline in the sheet MUST persist it immediately, even if no class is logged; if none is remembered, or the remembered value is not among the user’s selected disciplines, Home MUST use the first selected discipline; chip hidden when only one discipline is selected; sheet is floating, translucent, single selection. Sources: scope §6 Home, Sheet; stored values Last used discipline; mockups Discipline sheet.
 - **FR-020**: Class logging and water add/remove MUST work offline and MUST NOT wait for the network to update Home. Sources: scope §3.
-- **FR-021**: Rule numeric values (animated threshold, window days, down days, lazy days, classes for stage change, default water goal) MUST be remotely configurable with the defaults in FR-007/FR-008/User Story 7, MUST work offline with defaults, and invalid remote values MUST fall back to defaults. Sources: scope §4 Configurable values; domain RulesConfig behavior.
+- **FR-021**: Rule numeric values (animated threshold, window days, down days, lazy days, classes for stage change, default water goal) MUST be remotely configurable with the defaults in FR-008 and User Story 7, MUST work offline with defaults, and invalid remote values MUST fall back to defaults. Sources: scope §4 Configurable values; domain RulesConfig behavior.
 - **FR-022**: All Home motion for bounce, bottle, element appearance, tatami growth, and state crossfade MUST respect Reduce Motion (fade or no motion). Sources: scope §6 animation note / art direction; presentation Reduce Motion behavior; mockups Reduce Motion notes.
 - **FR-023**: Visible Home and message texts MUST ship in Spanish and English. Sources: scope §2 / §3 languages; message bank.
 - **FR-024**: When a class registration is rejected because a class already exists in the current local clock hour, Home MUST show a short system notice from the catalog in Spanish and English; the notice MUST NOT be a character message. Sources: stored values Class registration limit.
