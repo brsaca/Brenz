@@ -8,19 +8,19 @@
 
 **Input**: User description: "History tab: current week, chosen day's tatami and cards, and log sheet to change discipline or delete a class. Replaces the History shell left by spec 002."
 
-**Sources** (cited by section; not copied at length):
-- `docs/product/brenz-scope-v1.md` — §3 (History; edit or delete), §4 (stage and state after delete), §6 (History; Log sheet 6b–6e; Board)
-- `docs/product/brenz-mockups-v1.md` — History screens; screens 6a–6e; Log sheet rules
-- `docs/architecture/brenz-architecture-domain.md` — ChangeClassDiscipline, DeleteClass, ObserveWeekHistory (behavior only)
-- `docs/architecture/brenz-architecture-stored-values.md` — element stays fixed when discipline changes (behavior only)
-- `docs/product/brenz-message-bank.md` — checked for delete reactions (none)
+**Sources** (behavior only; cite by section; do not treat paths as implementation):
+- Product scope §3 (History; edit or delete), §4 (stage and state after delete), §6 (History; Log sheet 6b–6e; Board)
+- Product mockups: History screens; screens 6a–6e; Log sheet rules
+- Domain architecture: ChangeClassDiscipline, DeleteClass, ObserveWeekHistory (behavior only)
+- Stored values: element stays fixed when discipline changes (behavior only)
+- Message bank: checked for delete reactions (none)
 
 ## Clarifications
 
 ### Session 2026-11-27
 
 - Q: How should a class or water log's local time map onto the six chart labels (6a, 9a, 12p, 3p, 6p, 9p)? → A: Half-open windows [6–9), [9–12), [12–15), [15–18), [18–21), [21–24); times 00:00–05:59 count in 6a
-- Q: When a day has more than 12 classes, which classes appear as the 12 filled tatami cells (and are therefore tappable)? → A: First 12 by local time ascending; overflow only in +N (not tappable)
+- Q: When a day has more than 12 classes, which classes appear as the 12 filled tatami cells (and are therefore tappable)? → A: First 12 by registration time ascending, then log id ascending; overflow only in +N (not tappable)
 - Q: Server rejection of an optimistic write? → A: Not shown to the user in v1; only logged (data architecture).
 - Q: If two or more classes on the same day share the exact same local time, what order decides which enter the 12 filled cells? → A: At most one class per hour at registration (spec 002); if two devices create two classes in one hour while offline, order by registration timestamp ascending, then by log id ascending
 
@@ -80,6 +80,7 @@ The user opens the log sheet for a class, picks a different discipline, and save
 2. **Given** the log sheet is open, **When** the user selects a different discipline and taps Save, **Then** the sheet closes, History shows the updated discipline for that cell, and the time, date, and element remain unchanged.
 3. **Given** the log sheet is open, **When** the user selects the same discipline already stored and looks at Save, **Then** Save stays inactive.
 4. **Given** the device is offline, **When** the user saves a discipline change, **Then** the update applies immediately without requiring network.
+5. **Given** a class discipline was changed in History, **When** the user returns to Home, **Then** the current discipline shown for the next class is unchanged (the user's last used discipline for Home).
 
 ---
 
@@ -120,7 +121,7 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - **Only class of the day**: Deleting the last class leaves an empty tatami with the minimum three outlined rows, Classes total `0`, and a chart with no bars; if that day is in the past, the week-bar checkmark for that day disappears.
 - **Delete that lowers pet state**: After delete, pet state is recalculated from remaining classes (for example animated → normal, or toward down/lazy by attendance rules). Stage reached never decreases.
 - **Delete offline**: Removal and History refresh happen immediately; sync when network returns does not undo the local result.
-- **More than 12 classes on a day**: The tatami shows the first 12 classes by local time ascending as filled cells; classes after those 12 appear only in the `+N` overflow indicator and are not tappable until a delete frees a filled slot; tapping a filled cell opens that class's log sheet; deleting reduces overflow or filled cells accordingly (the next earliest overflow class, if any, becomes a filled cell).
+- **More than 12 classes on a day**: The tatami shows the first 12 classes by registration time ascending, then log id ascending as filled cells; classes after those 12 appear only in the `+N` overflow indicator and are not tappable until a delete frees a filled slot; tapping a filled cell opens that class's log sheet; deleting reduces overflow or filled cells accordingly (the next earliest overflow class, if any, becomes a filled cell).
 - **One class per hour**: A day has at most one class log per local clock hour; the rule is enforced when a class is registered (spec 002). Two devices can create two classes in one hour while offline; History MUST then order that day's classes by registration timestamp ascending, then by log id ascending. Deleting a class frees its hour.
 - **Week boundary (Monday)**: The week bar always starts on Monday of the current local week; Sunday is the last cell; no spill into the previous or next week.
 - **Device time zone change**: "Today", past, future, and week membership follow the device's current local calendar; after a time zone change, the week bar and day labels re-evaluate against the new local day without rewriting stored log times.
@@ -140,15 +141,15 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - **FR-003**: A past day with at least one class MUST show a checkmark in a lime circle; a past day without classes MUST show only the number. *(Source: scope §6 History; mockups History (6))*
 - **FR-004**: Future days MUST appear dimmed and MUST NOT be tappable. *(Source: scope §6 History)*
 - **FR-005**: Tapping today or a past day MUST show that day's label, large tatami, Classes card, and Water card. *(Source: scope §6 History; mockups History (6))*
-- **FR-006**: The History tatami MUST use the shared board for the chosen day, show at least three rows, grow when needed up to twelve cells, show `+N` above twelve classes, show empty outlined cells when empty, and shrink back to the rows needed after deletes. When more than twelve classes exist for the day, the twelve filled cells MUST be the earliest by local time ascending; overflow classes MUST appear only via `+N` and MUST NOT be tappable until a delete promotes them into a filled cell. *(Source: scope §6 Board; scope §6 History after delete 6e; mockups 6e; Clarifications 2026-11-27)*
+- **FR-006**: The History tatami MUST use the shared board for the chosen day, show at least three rows, grow when needed up to twelve cells, show `+N` above twelve classes, show empty outlined cells when empty, and shrink back to the rows needed after deletes. When more than twelve classes exist for the day, the twelve filled cells MUST be the earliest by registration time ascending, then log id ascending; overflow classes MUST appear only via `+N` and MUST NOT be tappable until a delete promotes them into a filled cell. *(Source: scope §6 Board; scope §6 History after delete 6e; mockups 6e; Clarifications 2026-11-27)*
 - **FR-007**: Classes and Water cards MUST each show a day total and a six-block 3-hour chart (6a, 9a, 12p, 3p, 6p, 9p). Each log MUST count in exactly one half-open local-time window: `[06:00–09:00)`, `[09:00–12:00)`, `[12:00–15:00)`, `[15:00–18:00)`, `[18:00–21:00)`, `[21:00–24:00)`; times `00:00–05:59` MUST count in 6a. Classes and Water MUST use the same mapping. *(Source: scope §3 History; scope §6 History; mockups History (6); Clarifications 2026-11-27)*
 - **FR-008**: Water on History MUST be read-only: totals and chart only—no glass event list and no add/remove. *(Source: scope §3 History; scope §6 History; user scope for this feature)*
 - **FR-009**: Tapping a filled tatami cell MUST open the log sheet from the bottom over a darkened History, with the tab bar remaining behind. *(Source: scope §3 edit or delete; scope §6 Log sheet 6b; mockups 6b; Log sheet rules)*
 - **FR-010**: The log sheet MUST show the day's element, the class discipline and time, single-selection discipline chips, Save, and Delete record; time and date MUST NOT be editable. *(Source: scope §6 Log sheet 6b; mockups 6b; Log sheet rules)*
 - **FR-011**: Save MUST stay inactive when the selected discipline equals the stored discipline, and MUST become active only after a different discipline is selected. *(Source: scope §6 Log sheet; mockups Log sheet rules)*
-- **FR-012**: Saving a new discipline MUST update only the discipline; time, date, and board element MUST stay unchanged. *(Source: scope §3 edit or delete; stored-values element behavior; domain ChangeClassDiscipline behavior; mockups flow 10)*
+- **FR-012**: Saving a new discipline MUST update only the discipline; time, date, and board element MUST stay unchanged. It MUST NOT change the user's last used discipline for Home. *(Source: scope §3 edit or delete; stored-values element behavior; domain ChangeClassDiscipline behavior; mockups flow 10)*
 - **FR-013**: Delete record MUST switch the same sheet to a confirmation that shows discipline and time, the notice that the class leaves the tatami and the stage does not go down, Delete, and Cancel (back to the log sheet). *(Source: scope §6 Log sheet 6c; mockups 6c; Log sheet rules)*
-- **FR-014**: Confirming Delete MUST remove the class, recalculate pet state from remaining classes, leave stage reached unchanged, refresh the tatami and Classes card, and leave the user on History for that day. *(Source: scope §4 stage/state after delete; scope §6 Log sheet 6e; domain DeleteClass / StageCalculator behavior; mockups 6e; Log sheet rules)*
+- **FR-014**: Confirming Delete MUST remove the class, recalculate pet state from remaining classes, leave stage reached unchanged, refresh the tatami and Classes card, and leave the user on History for that day. Deleting a class MUST NOT change the user's last used discipline for Home. *(Source: scope §4 stage/state after delete; scope §6 Log sheet 6e; domain DeleteClass / StageCalculator behavior; mockups 6e; Log sheet rules)*
 - **FR-015**: After confirm Delete, with Reduce Motion off, the sheet MUST show the class-deleted sequence (including the count of remaining classes of the chosen day) for about 2.5 seconds and then close; with Reduce Motion on, the animation MUST be skipped and the sheet MUST still close after the delete. *(Source: scope §6 Log sheet 6d; mockups 6d)*
 - **FR-016**: History browse, discipline change, and delete MUST work offline and apply immediately. *(Source: scope §3 offline use; domain week-history observe and class write behaviors)*
 - **FR-017**: All user-visible History and log-sheet texts MUST exist in Spanish and English (device Spanish → Spanish; otherwise English). *(Source: scope §3 v1 language)*
@@ -188,12 +189,11 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - At most one class per local clock hour per day. Enforcement is defined in spec 002 and the stored-values document. History orders classes of a day by registration timestamp ascending, then by log id ascending when the offline multi-device exception applies.
 - Discipline chips on the log sheet are the four fixed v1 disciplines; single selection only.
 - The ~2.5 s class-deleted duration is the product timing; a longer looping clip in the mockups is for design review only, not the shipped wait.
-- The copy of the figure must read correctly for today and for other days; the plan defines it.
+- The class-deleted figure copy MUST be correct for today and for any other day and for any remaining count, including zero. The mockup text '0 clases hoy' is a sample only. The plan defines the copy.
 - Scope §6 marks "tapping a past day" as proposed; mockups and the overall History decision treat it as in-scope—this spec follows the mockups and treats past-day selection as required.
 - Invented measurable targets (SC-001 sample, SC-002 15 s, SC-006 2 s offline refresh, SC-007 ±0.5 s) are pilot heuristics, not prior product SLAs.
 - No message-bank entry reacts to delete; History does not invent one.
 - Server rejections of optimistic writes are not shown to the user in v1 (data architecture).
-- If week data is unavailable, History shows the empty week shell with today selected and zero totals, without an error.
 - Settings, account actions, previous weeks, month/year views, event lists, editing time/date, and adding classes for past days stay out of this feature.
 
 ## Out of Scope
