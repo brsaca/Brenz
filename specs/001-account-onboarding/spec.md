@@ -13,7 +13,6 @@
 - Product mockups: Splash, Start, Intro, Sign Up, Sign In, Reset Password, Onboarding
 - Presentation architecture: root screen and navigation
 - Data architecture: authentication
-- Message bank: new-user messages only
 
 ## Clarifications
 
@@ -46,7 +45,6 @@ A person opens Brenz for the first time, chooses to start, watches the intro, cr
 7. **Given** Onboarding step 2 with one discipline pre-selected by default and multi-select allowed, **When** the user keeps or changes the selection (at least one) and continues, **Then** Onboarding step 3 (reminder) opens.
 8. **Given** Onboarding step 3 with reminder off, **When** the user finishes, **Then** onboarding is complete, Home opens, and no notification permission prompt is shown.
 9. **Given** Onboarding step 3, **When** the user turns the reminder on (days and time) and finishes, **Then** notification permission is requested, onboarding completes, and Home opens.
-10. **Given** the user just completed onboarding and has no logged classes, **When** Home first appears, **Then** a new-user character message from the new-user set is eligible to show once (message bank: New user).
 
 ---
 
@@ -171,7 +169,6 @@ Source tags use document section labels only (no file paths in requirement text)
 - **FR-024**: All user-visible strings in this feature MUST be available in Spanish and English; device language Spanish → Spanish; any other language → English. *(scope §2; presentation text catalog)*
 - **FR-025**: Splash and Intro MUST respect Reduce Motion (fade or no motion instead of looping/bounce motion). *(scope art/animation rules; presentation Animations)*
 - **FR-026**: Sign Up and Sign In primary actions MUST stay disabled/blocked while a submission is in progress. *(presentation form submitting behavior)*
-- **FR-027**: After onboarding, when the user first reaches Home with no logged classes, new-user messages from the message bank MAY appear once under the new-user rules (no nickname in messages). Home interactions beyond landing and this message eligibility are out of scope. *(message bank New user; scope §6 Home as destination)*
 
 ### Key Entities
 
@@ -204,12 +201,13 @@ Source tags use document section labels only (no file paths in requirement text)
 - Sign Up without network behaves like Sign In: request waits on connectivity and surfaces no-network (Sign In offline behavior is explicit in data authentication; Sign Up offline is required by this feature’s edge cases).
 - Terms, Privacy Policy, and support URLs exist as external pages by store readiness; this feature only requires that Start and Sign Up open those external pages when tapped. Explicit legal acceptance (checkbox) is not required for Sign Up in this feature.
 - Change Password, Delete Account, and Sign Out are specified elsewhere and are out of scope here; after those actions, returning to Start is assumed by product scope but not tested in this feature.
-- Home content, tab bar, training, history, and settings are out of scope except as the success destination after auth/onboarding and new-user message eligibility.
+- Home content, tab bar, training, history, and settings are out of scope except as the success destination after auth/onboarding.
 
 ## Out of Scope
 
 - Change Password, Delete Account, Sign Out (separate account-settings feature).
-- Home and everything after Home (training, water, history, settings), except reaching Home and new-user message eligibility on first arrival.
+- Home and everything after Home (training, water, history, settings), except reaching Home.
+- New-user character message on Home (spec 002).
 - Guest mode, Apple sign-in, mandatory email verification, phone verification, change email.
 - Languages other than Spanish and English.
 
@@ -225,5 +223,4 @@ Source tags use document section labels only (no file paths in requirement text)
 | Session survives reinstall | data authentication |
 | Languages es/en | scope §2; presentation catalog |
 | Reduce Motion | presentation Animations; scope animation rules |
-| New-user messages | message bank New user |
 | Reminder permission only if on | scope §6; presentation Reminder |
