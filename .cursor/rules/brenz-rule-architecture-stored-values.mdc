@@ -1,0 +1,32 @@
+---
+description: Brenz stored enum values, lastDiscipline field, reminder day numbering and weekly board element rotation (elementId formula). Apply when creating or editing Discipline, ClassLog, UserProfile, DTOs, Firestore rules or the element calculation.
+alwaysApply: false
+---
+
+# Brenz stored values and element rotation
+
+Source: `@docs/architecture/brenz-architecture-stored-values.md`. This source wins over the domain and data documents where they differ.
+
+## Rules
+- Store `Discipline` as `boxing`, `jiu_jitsu`, `muay_thai`, `kickboxing`. Declare the raw values explicitly.
+- Read an unknown stored discipline as `.unknown`. Do not write it back.
+- Do not store `PetState`.
+- Store `stageReached` as an integer (1 or 2).
+- Store `characterId` as text. v1 value: `fox`.
+- Store `elementId` as an integer from 1 to 7.
+- Store reminder days as integers 1 to 7. Monday = 1, Sunday = 7.
+- Convert `Calendar` weekdays (Sunday = 1) to Monday = 1 in one Domain function.
+- Add `lastDiscipline` (optional) to `UserProfile` and to `users/{uid}`. Update it inside `RegisterClass`. Fall back to the first `selectedDisciplines` value.
+- Calculate `elementId` once in `RegisterClass`: `((dayIndex + weekIndex) mod 7) + 1`.
+- `dayIndex`: Monday = 0 … Sunday = 6, from the class local date.
+- `weekIndex`: whole weeks from Monday 2026-01-05 to the Monday of the class week.
+- Name the catalog field `baseOrder` (1 to 7). Do not use `weekday`.
+- Look up the element by (discipline, `elementId`), then by `elementId`.
+
+## Forbidden
+- Do not use random values or the ISO week number for the element.
+- Do not read `Date()` or `Calendar.current` in the element function.
+- Do not store the week index.
+- Do not change `elementId` when the discipline changes.
+- Do not store `lastDiscipline` in `UserDefaults`.
+- Do not add Remote Config keys for the rotation.
