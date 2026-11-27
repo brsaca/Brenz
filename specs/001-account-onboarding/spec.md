@@ -80,7 +80,7 @@ An existing account holder chooses "I already have an account", signs in with em
 4. **Given** the user is on Sign Up, **When** they tap the link to sign in, **Then** Sign In opens.
 5. **Given** the user is on Sign In, **When** they tap the link to create an account, **Then** Sign Up opens.
 6. **Given** wrong email or password, **When** the user submits Sign In, **Then** an invalid-credentials error is shown and they remain on Sign In.
-7. **Given** no network, **When** the user submits Sign In, **Then** a no-network error is shown and they remain on Sign In.
+7. **Given** no network, **When** the user submits Sign In, **Then** after waiting up to ~10 seconds a no-network error is shown and they remain on Sign In.
 
 ---
 
@@ -97,7 +97,7 @@ A user who forgot their password requests a reset link from Sign In without leav
 1. **Given** the user is on Sign In, **When** they tap "¿Olvidaste tu contraseña?", **Then** Reset Password opens.
 2. **Given** a valid email format on Reset Password (whether or not an account exists for that address), **When** the user requests the reset, **Then** the same generic “link sent” confirmation is shown on Reset Password (user remains on that screen) with a clear path back to Sign In, without establishing a session and without revealing whether the email is registered.
 3. **Given** an invalid email format, **When** the user submits Reset Password, **Then** an invalid-email error is shown and no link is sent.
-4. **Given** no network, **When** the user submits Reset Password, **Then** a no-network error is shown.
+4. **Given** no network, **When** the user submits Reset Password, **Then** after waiting up to ~10 seconds a no-network error is shown.
 
 ---
 
@@ -114,15 +114,15 @@ A first-time user who taps Start sees three intro screens with looping animation
 1. **Given** first launch after full splash, **When** the user is on Start, **Then** they see the animated character area, tagline, Start and I-have-an-account actions, and Terms and Privacy Policy links that open external pages.
 2. **Given** Intro screens 1–3, **When** each screen plays, **Then** a ~9 s looping animation runs, there is no skip control, and Continuar (last: Empezar) appears only after the animation ends.
 3. **Given** Reduce Motion is enabled, **When** splash or intro would animate, **Then** motion is reduced to a simple fade or no motion while the flow and copy remain usable.
-4. **Given** the user already completed first launch (has launched before) and has no session, **When** they open the app (for example after sign-out from a later feature), **Then** splash is short (logo only) and Start appears without forcing the full first-launch splash or replaying Intro unless they choose Start again.
+4. **Given** the user already completed first launch (has launched before) and has no session, **When** they open the app (for example after sign-out from a later feature), **Then** splash is short (logo only) and Start appears without forcing the full first-launch splash or replaying Intro unless they choose Start again. The launch marker MUST NOT be cleared by Sign Out or Delete Account.
 
 ---
 
 ### Edge Cases
 
 - **Abandoned onboarding**: User creates an account or signs in, leaves during Onboarding (app kill or background forever). Next open with that session shows Onboarding step 1, not Home and not Sign Up.
-- **No network on sign up**: User submits Sign Up offline. Account is not created; a no-network error is shown; user remains on Sign Up.
-- **No network on sign in / reset**: Same class of no-network error; no session change.
+- **No network on sign up**: User submits Sign Up offline. Account is not created; after waiting up to ~10 seconds a no-network error is shown; user remains on Sign Up.
+- **No network on sign in / reset**: Same class of no-network error after waiting up to ~10 seconds; no session change.
 - **Email already in use**: Sign Up with an existing email shows email-already-in-use; user remains on Sign Up.
 - **Weak password**: Password shorter than 8 characters is rejected before the request is sent; weak-password feedback is shown.
 - **Invalid email format**: Sign Up, Sign In, or Reset Password with a malformed email shows invalid-email feedback without sending a request when validation fails client-side.
@@ -147,9 +147,9 @@ Source tags use document section labels only (no file paths in requirement text)
 - **FR-002**: Account creation and sign-in MUST use email and password only; Apple sign-in MUST NOT be offered in this feature. *(scope §3, §11.1–2; mockups Canvas status; data authentication)*
 - **FR-003**: Email verification MUST NOT be required to complete sign up or reach onboarding/Home. *(scope §3 Out of v1; user feature constraints)*
 - **FR-004**: Password MUST be at least 8 characters and MUST be validated before the create/sign-in request is sent. *(data authentication; architecture base authentication errors; scope Change Password notice pattern)*
-- **FR-005**: The app MUST surface these authentication failures to the user: invalid credentials, email already in use, weak password, invalid email, and no network. *(architecture base authentication errors; data authentication; offline wait for Sign In)*
+- **FR-005**: The app MUST surface these authentication failures to the user: invalid credentials, email already in use, weak password, invalid email, and no network. Sign Up, Sign In and Reset Password MUST wait up to ~10 seconds for the server; after that they MUST show the no-network error and change no session state. *(architecture base authentication errors; data authentication; offline wait for Sign In)*
 - **FR-006**: Root navigation MUST choose the surface from session and profile state: (1) splash until session (and profile when applicable) is known—full splash if the device has never launched before, short splash otherwise; if resolution takes longer than the branded/minimum splash duration, the splash (logo) MUST remain until resolution succeeds or fails—MUST NOT navigate to Start, Home, or Onboarding early; (2) no session → welcome flow (Start, Intro, Sign Up, Sign In, Reset Password); (3) session with onboarding incomplete or profile missing → Onboarding; (4) session with onboarding complete → Home; (5) session present but profile cannot be loaded (network or server failure) → keep the session and show a retryable error surface—MUST NOT open Home or Onboarding until the profile loads successfully. *(presentation root screen and navigation; scope §6; §11.3)*
-- **FR-007**: First launch MUST show the full splash (logo, BRENZ, slogan, copyright footer) with animation; later launches with prior launch MUST show logo-only splash for at least about 0.8 s, and longer if session/profile is still resolving (FR-006). *(scope §3, §6, §11.7; mockups Splash screens)*
+- **FR-007**: First launch MUST show the full splash (logo, BRENZ, slogan, copyright footer) with animation; later launches with prior launch MUST show logo-only splash for at least about 0.8 s, and longer if session/profile is still resolving (FR-006). The launch marker MUST NOT be cleared by Sign Out or Delete Account. *(scope §3, §6, §11.7; mockups Splash screens)*
 - **FR-008**: First-launch full splash presents about 1.5 s of branded motion as a minimum while session resolution proceeds per FR-006; if resolution is still pending after that motion, the splash MUST continue (logo visible) until session/profile is known or load fails. *(scope §6 First launch flow)*
 - **FR-009**: Start MUST offer Start and I-have-an-account actions, plus Terms and Privacy Policy links that open external pages; an acceptance checkbox or similar control MUST NOT be required on Start. *(scope §6 Screens; §11.9; mockups Start)*
 - **FR-010**: Choosing Start MUST open the three-screen Intro; choosing I-have-an-account MUST open Sign In. *(scope §6; mockups Flow)*
@@ -189,7 +189,7 @@ Source tags use document section labels only (no file paths in requirement text)
 - **SC-005**: With device language Spanish, every screen in this feature shows Spanish copy; with English (or non-Spanish), every screen shows English copy—no mixed untranslated keys on Start, Intro, Sign Up, Sign In, Reset Password, or Onboarding.
 - **SC-006**: With Reduce Motion on, splash and intro do not play looping or bouncing motion; the user can still complete Intro and reach Sign Up.
 - **SC-007**: In manual trials of abandoned onboarding (kill app mid-onboarding), the next cold start with the same session opens Onboarding, not Home, in 100% of trials.
-- **SC-008**: Offline Sign Up and Sign In attempts show a no-network error and do not change session state in 100% of trials.
+- **SC-008**: Offline Sign Up and Sign In attempts show a no-network error within ~10 seconds and do not change session state in 100% of trials.
 - **SC-009**: After successful Sign Up + onboarding, or Sign In with completed onboarding, Home is the next screen in 100% of successful trials (no guest bypass).
 
 ## Assumptions
@@ -202,6 +202,7 @@ Source tags use document section labels only (no file paths in requirement text)
 - Terms, Privacy Policy, and support URLs exist as external pages by store readiness; this feature only requires that Start and Sign Up open those external pages when tapped. Explicit legal acceptance (checkbox) is not required for Sign Up in this feature.
 - Change Password, Delete Account, and Sign Out are specified elsewhere and are out of scope here; after those actions, returning to Start is assumed by product scope but not tested in this feature.
 - Home content, tab bar, training, history, and settings are out of scope except as the success destination after auth/onboarding.
+- The ~10 s wait is the same rule used by spec 004 for Change Password and Delete Account.
 
 ## Out of Scope
 
