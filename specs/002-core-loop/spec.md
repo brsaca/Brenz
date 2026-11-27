@@ -24,25 +24,28 @@
 - Q: If the remembered last-used discipline is no longer among the user’s selected disciplines, which discipline should Home use for the chip and the next class log? → A: Fall back to the first selected discipline
 - Q: When today’s water glasses exceed the user’s goal, how should the bottle on Home look? → A: Cap visual fill at full; fraction text may exceed goal (e.g. 10/8)
 - Q: When the user taps History or Settings in the Home tab bar during this feature, what should happen? → A: Tabs navigate to placeholder shells (no History/Settings content yet)
+- Q: Several classes in the same hour? → A: At most one class per local clock hour. A second tap in that hour registers nothing and shows a short system notice.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Log a class with one tap (Priority: P1)
 
-A signed-in user on Home taps the main training button once. The character reacts, today’s board gains one cell with the day’s element, Undo is offered briefly, and multiple taps in the same day each add another class.
+A signed-in user on Home taps the main training button once. The character reacts, today’s board gains one cell with the day’s element, Undo is offered briefly, and several classes per day count, at most one per local clock hour.
 
 **Why this priority**: Class logging is the core habit action; without it there is no board progress, stage progress, or meaningful pet state.
 
-**Independent Test**: On Home with at least one selected discipline, tap the main class button once and again; verify bounce, board cell, Undo window, and that each tap counts as a separate class for today.
+**Independent Test**: On Home with at least one selected discipline, tap the main class button once and again in a later clock hour; verify bounce, board cell, Undo window, and that several classes per day count at most one per local clock hour.
 
 **Acceptance Scenarios**:
 
 1. **Given** the user is on Home with a remembered (or default) discipline, **When** they tap the main class button ("Fui a clase" / equivalent English), **Then** one class is registered for today with date and time, the character bounces (or fades under Reduce Motion), and the day’s element appears on a tatami cell.
 2. **Given** a class was just registered, **When** fewer than 5 seconds have passed, **Then** Undo is available and tapping Undo removes that last class and updates the board and pet state accordingly.
 3. **Given** a class was registered, **When** 5 seconds or more have passed, **Then** Undo is no longer available for that class from Home.
-4. **Given** the user already logged one or more classes today, **When** they tap the main class button again, **Then** another class is added (several classes per day count) and another cell is filled.
+4. **Given** the user already logged one or more classes today, **When** they tap the main class button in a later local clock hour than the previous class of the day, **Then** another class is added (several classes per day count, at most one per local clock hour) and another cell is filled.
 5. **Given** the user has no network, **When** they tap the main class button, **Then** the class is registered immediately without waiting for the network and the board updates at once.
 6. **Given** a class is registered for a local calendar day, **When** that day is viewed later or on another device for the same account, **Then** the same board element is associated with that class (element depends on the class’s local date and weekly rotation; changing the class’s discipline later does not change its element).
+7. **Given** a class was registered in the current local clock hour, **When** the user taps the main class button, **Then** no class is registered, a short notice is shown, and no Undo is offered.
+8. **Given** the last class was undone, **When** the user taps again in the same hour, **Then** a class is registered.
 
 ---
 
@@ -185,6 +188,9 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **Last-used discipline no longer selected**: Resolve to the first selected discipline for chip and next class log.
 - **Bubble closed then state changes**: Bubble may show again for the new state/day rules; water taps always can reopen it for ~4 s.
 - **New-user and midday both eligible**: Show new-user only for that Home open; midday may appear on a later open the same day after new-user is no longer eligible.
+- **Second tap in the same hour**: No class is registered; a short system notice is shown; Undo is not offered.
+- **Classes at 14:59 and 15:00**: Both are accepted (different local clock hours).
+- **Undo frees the hour**: After undoing the last class, a tap in the same local clock hour registers a class again.
 
 ## Requirements *(mandatory)*
 
@@ -193,7 +199,7 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **FR-001**: Home MUST show, top to bottom: discipline chip (when more than one discipline is selected), character speech bubble with close control, large character with optional nickname and stage line, today’s board card (tatami + bottle with +/−), main class button, and the floating tab destinations Train / History / Settings. Tapping History or Settings MUST navigate to placeholder shells for those destinations; full History and Settings content remain out of scope. Sources: scope §6 Home; mockups Home.
 - **FR-002**: The main class button MUST register exactly one class for the local today per tap, storing discipline, local date/time, and a board element fixed at registration. Sources: scope §3, §6 Interactions; domain RegisterClass behavior; stored values Board element rotation.
 - **FR-003**: After each successful class registration from Home, the character MUST bounce (respecting Reduce Motion), the day’s element MUST appear on a tatami cell, and Undo MUST be available for 5 seconds for that last registration only. Sources: scope §3, §6 Interactions; domain UndoClass behavior.
-- **FR-004**: Several classes on the same local day MUST each count for board, state, and stage. Sources: scope §3.
+- **FR-004**: Several classes on the same local day MUST count, at most one per local clock hour. Sources: scope §3; stored values Class registration limit.
 - **FR-005**: Classes for previous days MUST NOT be addable from Home. Sources: scope §3.
 - **FR-006**: Pet state MUST be recalculated (never stored as source of truth) using: lazy (≥7 days without class), down (4–6 days without class), animated (last class ≤3 days ago and ≥2 classes in last 7 days), normal (last class ≤3 days ago and <2 classes in last 7 days); new user with no classes starts normal. Sources: scope §4; domain PetStateCalculator behavior.
 - **FR-007**: Meeting today’s water goal MUST raise normal to animated for that day only; water MUST NEVER lower state except by undoing that water-based raise when glasses fall below the goal; each glass alone MAY cause a short bounce without changing state. Sources: scope §4.
@@ -213,10 +219,11 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **FR-021**: Rule numeric values (animated threshold, window days, down days, lazy days, classes for stage change, default water goal) MUST be remotely configurable with the defaults in FR-007/FR-008/User Story 7, MUST work offline with defaults, and invalid remote values MUST fall back to defaults. Sources: scope §4 Configurable values; domain RulesConfig behavior.
 - **FR-022**: All Home motion for bounce, bottle, element appearance, tatami growth, and state crossfade MUST respect Reduce Motion (fade or no motion). Sources: scope §6 animation note / art direction; presentation Reduce Motion behavior; mockups Reduce Motion notes.
 - **FR-023**: Visible Home and message texts MUST ship in Spanish and English. Sources: scope §2 / §3 languages; message bank.
+- **FR-024**: When a class registration is rejected because a class already exists in the current local clock hour, Home MUST show a short system notice from the catalog in Spanish and English; the notice MUST NOT be a character message. Sources: stored values Class registration limit.
 
 ### Key Entities
 
-- **Class log**: One training registration; local date/time; discipline; fixed board element identity for that log; counts toward today’s board, state, and stage.
+- **Class log**: One training registration; local date/time; discipline; fixed board element identity for that log; at most one per local clock hour of its day; counts toward today’s board, state, and stage.
 - **Water glass**: One timed drink event for a local day; today’s set drives bottle UI and water-based animated state.
 - **Pet status**: Derived state (animated, normal, down, lazy) plus stage reached (1 or 2 in v1) and optional nickname for display.
 - **Today’s board**: Tatami layout for today’s class logs plus bottle for today’s glasses; layout computed from counts.
@@ -237,6 +244,7 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **SC-006**: With Reduce Motion enabled, no bounce or spin-style motion runs on class log, water change, or state change; feedback remains understandable via fade or static update in 100% of checked interactions.
 - **SC-007**: After local midnight, today’s water shows 0 and yesterday’s classes do not appear as “today” on Home in 100% of overnight test runs.
 - **SC-008**: Pilot users can complete the daily loop (optional water + at least one class) without leaving Home, with task success on first attempt for at least 90% of moderated pilot sessions.
+- **SC-009**: In 100% of test runs, a second tap in the same local clock hour writes no class.
 
 ## Assumptions
 
