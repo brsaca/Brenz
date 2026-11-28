@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-27
 
-**Status**: Draft
+**Status**: Ready for implementation
 
 **Input**: User description: "Settings tab and account management: profile and training preferences, Change Password, Delete Account, Sign Out, external links and the optional minimum-version lock screen. Spec 002 leaves a placeholder Settings shell; this spec replaces it."
 
@@ -96,7 +96,7 @@ A signed-in user edits nickname (max 10 characters, optional), selected discipli
 
 ### User Story 5 - External Links, Rate App, and Footer (Priority: P2)
 
-From Settings, the user opens Support, Terms, and Privacy Policy as external pages, can rate the app via the system review dialog, and sees the app icon and version in the footer.
+From Settings, the user opens Support from More, opens Terms and Privacy Policy from the footer, can rate the app via the system review dialog, and sees the app icon and version in the footer.
 
 **Why this priority**: Legal and support surfaces are required for store readiness but do not block account lifecycle.
 
@@ -104,9 +104,10 @@ From Settings, the user opens Support, Terms, and Privacy Policy as external pag
 
 **Acceptance Scenarios**:
 
-1. **Given** Settings More section, **When** the user taps Support, Terms, or Privacy Policy, **Then** the corresponding external page opens using URLs from local app constants (not Remote Config).
+1. **Given** Settings More section, **When** the user taps Support, **Then** the Support external page opens using the URL from local app constants (not Remote Config).
 2. **Given** Settings More section, **When** the user taps Rate the app, **Then** the system review dialog is presented (subject to platform eligibility).
-3. **Given** Settings, **When** the user views the footer, **Then** the app icon and installed version are visible along with Terms and Privacy Policy entry points.
+3. **Given** Settings footer, **When** the user taps Terms or Privacy Policy, **Then** the corresponding external page opens using URLs from local app constants (not Remote Config).
+4. **Given** Settings, **When** the user views the footer, **Then** the app icon and installed version are visible along with Terms and Privacy Policy entry points.
 
 ---
 
@@ -157,11 +158,11 @@ When the installed app version is lower than the configured minimum version, a l
 - **FR-010**: Change Password MUST be a full screen (7d) with current, new, and repeat fields (each with eye), notice that new password needs 8+ characters, update button enabled only when all fields are filled, new password has 8+ characters, and repeat matches; no recovery link. *(Source: scope §6 7d; mockups 7d / Change Password rules; domain ChangePassword)*
 - **FR-011**: Change Password MUST show error 7g for wrong current password and 7h for mismatched repeat. *(Source: scope §6 7g–7h; mockups Change Password rules)*
 - **FR-012**: Change Password success MUST show sheet 7i over darkened Settings with the same success pattern as account deleted (~2.5 s bar), then close so Settings remains. Reduce Motion MUST skip the animation. *(Source: scope §6 7i; mockups 7i)*
-- **FR-013**: Sign In, Delete Account and Change Password MUST wait for the server up to ~10 seconds; after that they MUST show a no-network message and MUST NOT complete the sensitive action. Other Settings preference edits MUST apply immediately (optimistic). Server rejection of optimistic writes MUST NOT be shown to the user in v1. *(Source: scope §7; data Offline writes; Clarifications 2026-11-27)*
-- **FR-014**: Nickname MUST be optional, maximum 10 characters, editable in Character; empty hides the nickname line; it is never translated; character messages MUST NOT use it. *(Source: scope §6 Nickname; domain UserProfile / UpdateProfile)*
+- **FR-013**: Delete Account and Change Password MUST wait for the server up to ~10 seconds; after that they MUST show a no-network message and MUST NOT complete the sensitive action. Other Settings preference edits MUST apply immediately (optimistic). Server rejection of optimistic writes MUST NOT be shown to the user in v1. *(Sign In uses the same ~10 s wait pattern from feature 001; out of scope for this feature's implementation. Source: scope §7; data Offline writes; Clarifications 2026-11-27)*
+- **FR-014**: `petNickname` MUST be optional, maximum 10 characters, editable in Character; empty hides the nickname line; it is never translated; character messages MUST NOT use it. *(UI copy: nickname. Source: scope §6 Nickname; domain UserProfile / UpdateProfile)*
 - **FR-015**: Selected disciplines MUST keep at least one. If the last used discipline is removed from the selection, Home MUST fall back to the first selected discipline in fixed catalog order. *(Source: stored-values Last used discipline; domain UpdateProfile; scope §6 Training)*
 - **FR-016**: Water goal MUST be editable from 4 to 16 glasses (default 8 from product rules). Changes MUST apply on Home. *(Source: scope §4 water goal, §6 Settings; domain UserProfile)*
-- **FR-017**: Reminder (days and time) MUST request notification permission only when turned on. If denied, reminder stays off with a notice and a way to open system Settings. Reminders MUST be cancelled on Sign Out and Delete Account. On app open, reminder schedule MUST reconcile with the profile. *(Source: scope §3 reminder, §6 onboarding/Settings; data ReminderScheduler / Sign out / Delete account; domain ReminderScheduler)*
+- **FR-017**: Reminder (days and time) MUST request notification permission only when turned on. If denied, reminder stays off with a notice and a way to open system Settings. Reminders MUST be cancelled on Sign Out and Delete Account. On app open, reminder schedule MUST reconcile with the profile via `ReconcileReminder` (**this feature owns** reconcile-on-open; feature 001 only schedules when the reminder is enabled). *(Source: scope §3 reminder, §6 onboarding/Settings; data ReminderScheduler / Sign out / Delete account; domain ReminderScheduler)*
 - **FR-018**: Support, Terms, and Privacy Policy MUST open as external pages whose URLs come from local constants / embedded app configuration (not Remote Config). Rate the app MUST use the system review dialog. Footer MUST show icon and version. *(Source: scope §3 Settings links, §6 Settings, §9 Store checklist; mockups Settings (7); Clarifications 2026-11-27)*
 - **FR-019**: If installed version is lower than a valid minimum version, the app MUST show an optional lock screen with an App Store button that blocks the app. The app MUST evaluate this on cold start and every time it enters foreground. Missing or invalid minimum MUST mean no lock. Equal or higher installed version MUST never lock. This lock screen is the first scheduled cut. *(Source: scope §4 min_version, §6 version lock, §8 cut order; data Remote Config min_version; domain VersionComparator; presentation Version lock screen; Clarifications 2026-11-27)*
 - **FR-020**: All Settings and account texts MUST be available in Spanish and English. Reduce Motion MUST be respected on success animations and related motion. *(Source: scope §6 / content; constitution Language / UI)*
@@ -169,10 +170,10 @@ When the installed app version is lower than the configured minimum version, a l
 
 ### Key Entities
 
-- **User profile (preferences)**: Nickname (optional, max 10), selected disciplines (one or more of the four training disciplines), last used discipline (optional; falls back to first selected), water goal (4–16), reminder (days Monday=1…Sunday=7 and time; empty when off), email (display only in Account).
+- **User profile (preferences)**: `petNickname` (optional, max 10; UI copy: nickname), selected disciplines (one or more of the four training disciplines), last used discipline (optional; falls back to first selected), water goal (4–16), reminder (days Monday=1…Sunday=7 and time; empty when off), email (display only in Account).
 - **Account session**: Signed-in email/password session required for Settings; ended by Sign Out or Delete Account.
 - **Minimum version policy**: Remote minimum app version compared to installed version on cold start and every foreground entry; invalid/missing treated as allowing all installs.
-- **Local device state**: Cached progress, preference cache, message-rotation flags, and scheduled reminders cleared on Sign Out and Delete Account. The launch marker is not cleared.
+- **Local device state**: Cached progress, preference cache, message-rotation flags, and scheduled reminders cleared on Sign Out and Delete Account (`MessageRotationStore.clear()`; reminders cancelled). The launch marker (`hasLaunchedBefore`) is never cleared.
 
 ## Success Criteria *(mandatory)*
 
@@ -199,10 +200,11 @@ When the installed app version is lower than the configured minimum version, a l
 - Default water goal remains 8 until the user changes it.
 - No new error screens beyond 7e, 7g, 7h, no-network for waiting actions, and reminder permission notice.
 - Server rejection of optimistic preference or training writes is logged only and not shown (v1).
-- Cut order: if schedule pressure requires it, the minimum-version lock screen UI is cut first while still treating invalid/missing minimum as non-locking.
+- Cut order (aligned with plan): **0)** minimum-version lock screen UI (comparator + `min_version` field stay; invalid/missing still non-locking); **4)** Change Password in-app (email recovery via Sign In remains); **5)** success/deletion animations (7c/7i confirmations and navigation remain; static success acceptable). Do not cut Sign Out or Delete Account.
 - Support, Terms, and Privacy Policy destination URLs are shipped as local constants in the app; changing them requires an app update.
-- Delete Account and Change Password treat network failure after waiting up to ~10 seconds as no-network; no separate retry UI in v1 beyond the user confirming again.
-- Sign Out's “brief” pending-sync attempt is capped at up to 3 seconds; cleanup and return to Start always continue afterward.
+- Delete Account and Change Password treat network failure after waiting up to 10 seconds as no-network; no separate retry UI in v1 beyond the user confirming again.
+- Sign Out's pending-sync attempt is capped at 3 seconds; cleanup and return to Start always continue afterward.
+- Feature **004** owns reminder reconcile-on-open (FR-017 / `ReconcileReminder`). Feature **001** only schedules the reminder when it is turned on.
 
 ## Source Traceability
 
