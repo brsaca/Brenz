@@ -78,7 +78,7 @@ No mockup of the version lock screen (`min_version`, optional).
 - Available for every v1 account (all are email accounts).
 - Firebase asks to reauthenticate with the current password and then updates the new one.
 - "Actualizar contraseña" is enabled when the three fields have text, the new one has 8 characters or more and the repeat matches.
-- Errors: wrong current password (7g) and different repeat (7h). The "new equals current" error uses the same style, without a drawn mockup.
+- Errors: wrong current password (7g) and different repeat (7h).
 - The screen does not offer password recovery. Whoever forgot it signs out and uses "¿Olvidaste tu contraseña?" in Sign In.
 - On update, the success sheet (7i) covers Settings with the same animation as 7c and 6d, and closes by itself.
 
