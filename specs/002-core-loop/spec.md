@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-27
 
-**Status**: Draft
+**Status**: Ready for implementation
 
 **Input**: User description: "core-loop — daily training loop in Home: pet, class logging, water, tatami board, and character messages. Spec 001 delivers the user to Home."
 
@@ -21,16 +21,16 @@
 ### Session 2026-11-27
 
 - Q: When Home opens and both the new-user message and the no-glasses-at-midday message are eligible, which one should the speech bubble show? → A: Priority: new-user → midday → state message
-- Q: If the remembered last-used discipline is no longer among the user’s selected disciplines, which discipline should Home use for the chip and the next class log? → A: Fall back to the first selected discipline
+- Q: If the remembered last-used discipline is no longer among the user’s selected disciplines, which discipline should Home use for the chip and the next class log? → A: Fall back to the first selected in catalog order
 - Q: When today’s water glasses exceed the user’s goal, how should the bottle on Home look? → A: Cap visual fill at full; fraction text may exceed goal (e.g. 10/8)
 - Q: When the user taps History or Settings in the Home tab bar during this feature, what should happen? → A: Tabs navigate to placeholder shells (no History/Settings content yet)
-- Q: Several classes in the same hour? → A: At most one class per local clock hour. A second tap in that hour registers nothing and shows a short system notice.
+- Q: Several classes in the same hour? → A: At most one class per local clock hour. A second tap in that hour registers nothing and shows toast `home.notice.alreadyLoggedThisHour` (2.5 s, no action, no Undo).
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Log a class with one tap (Priority: P1)
 
-A signed-in user on Home taps the main training button once. The character reacts, today’s board gains one cell with the day’s element, Undo is offered briefly, and several classes per day count, at most one per local clock hour.
+A signed-in user on Home taps the main training button once. The character reacts, today’s board gains one cell with the day’s element, Undo is offered briefly, and several classes per day count, at most one per local clock hour. Placing the day’s element on a cell is in scope here; **full tatami growth** (extra rows, 12-cell cap, “+N” overflow, shrink on Undo) belongs to User Story 6.
 
 **Why this priority**: Class logging is the core habit action; without it there is no board progress, stage progress, or meaningful pet state.
 
@@ -60,13 +60,13 @@ The character’s state is always derived from recent classes and today’s wate
 **Acceptance Scenarios**:
 
 1. **Given** no classes ever logged, **When** Home is shown, **Then** the pet state is normal (new user) and stage is stage 1 with the visible stage name.
-2. **Given** the last class was 3 days ago or less and there are fewer than 2 classes in the last 7 days, **When** state is calculated, **Then** the pet is normal.
-3. **Given** the last class was 3 days ago or less and there are 2 or more classes in the last 7 days, **When** state is calculated, **Then** the pet is animated.
-4. **Given** 4 to 6 days without a class, **When** state is calculated, **Then** the pet is down.
-5. **Given** 7 or more days without a class, **When** state is calculated, **Then** the pet is lazy.
+2. **Given** days since last class are in the active band (`daysSinceLastClass < downDays`; with defaults 0…3) and there are fewer than `animatedThreshold` classes in the last `windowDays`, **When** state is calculated, **Then** the pet is normal.
+3. **Given** days since last class are in the active band and there are at least `animatedThreshold` classes in the last `windowDays`, **When** state is calculated, **Then** the pet is animated.
+4. **Given** `downDays <= daysSinceLastClass < lazyDays` (with defaults 4…6), **When** state is calculated, **Then** the pet is down.
+5. **Given** `daysSinceLastClass >= lazyDays` (with defaults ≥7), **When** state is calculated, **Then** the pet is lazy.
 6. **Given** base state normal and today’s water glasses meet the user’s water goal, **When** state is calculated for today, **Then** the pet is animated for that day only; water never lowers state by itself.
 7. **Given** the pet was animated only because of water and the user removes a glass so today’s count is below the goal, **When** state is recalculated, **Then** the pet returns to normal for today.
-8. **Given** the user reaches 10 accumulated classes, **When** that class is registered, **Then** stage becomes stage 2, the stage line updates, and stage never decreases afterward even if a class is undone or later deleted elsewhere. The stage-change message shows once per stage reached. Undo and re-registering the class that reached the threshold does not show it again.
+8. **Given** the user reaches 10 accumulated classes, **When** that class is registered, **Then** stage becomes stage 2, the stage line updates, and stage never decreases afterward even if a class is undone or later deleted elsewhere. The stage-change message shows once per stage reached (once-flag per stage). Undo and re-registering the class that reached the threshold does not show it again.
 9. **Given** the pet is lazy, **When** the user logs the next class, **Then** state returns toward normal/animated per the class rules (no separate reset control).
 10. **Given** a nickname is set, **When** Home shows the character, **Then** nickname and stage line appear under the character (stage 1 style: stage name · class N of 10; stage 2 style: stage name · N classes). **Given** nickname is empty, **When** Home shows the character, **Then** the nickname line is omitted.
 11. **Given** Reduce Motion is on, **When** the user logs a class or changes state, **Then** bounce/spin-style motion is replaced by a simple fade or no motion, and the correct state and stage art still appear.
@@ -96,7 +96,7 @@ On Home’s board card the user adds and removes glasses with + and −. The bot
 
 ### User Story 4 - Character messages in the speech bubble (Priority: P2)
 
-The speech bubble shows state, class-event, water, and ambient messages according to the message bank rules. The user can close the bubble with X. Water messages are temporary (~4 s) and can reopen a closed bubble.
+The speech bubble shows state, class-event, water, and ambient messages according to the message bank rules. The user can close the bubble with X. Water messages are temporary (`waterMessageDuration` = 4 seconds in Presentation) and can reopen a closed bubble.
 
 **Why this priority**: Messages give sarcastic, supportive feedback without blocking the core log/water loop; they depend on state and actions already working.
 
@@ -107,8 +107,8 @@ The speech bubble shows state, class-event, water, and ambient messages accordin
 1. **Given** a pet state for the local day, **When** a state message is chosen, **Then** one message from that state’s bank is shown for the whole day for that state, without repeating until that state’s bank is exhausted across days, and messages never include the nickname.
 2. **Given** normal state and no class logged today, **When** a normal state message is chosen, **Then** the two “today reminder” (T) messages may appear; **Given** a class already logged today, **When** a normal state message is chosen, **Then** (T) messages are not used.
 3. **Given** the previous state was lazy, **When** the user logs the first class that leaves lazy, **Then** the return-after-lazy event message is shown once.
-4. **Given** the user reaches the stage-change class count, **When** that class is registered, **Then** a stage-change message appears in the bubble (no modal), with the visible stage name supplied as an argument.
-5. **Given** the user taps + or − for water, **When** a water message is selected, **Then** priority on add is goal reached, then half of goal (rounded up), then add; on remove is dropped-below-goal (only if state actually fell from water-animated to normal) else one glass less; the message shows ~4 seconds then the state message returns.
+4. **Given** the user reaches the stage-change class count and that stage’s once-flag is unset, **When** that class is registered, **Then** a stage-change message appears in the bubble (no modal), with the visible stage name supplied as an argument; the once-flag for that stage is set so Undo and re-register do not show it again.
+5. **Given** the user taps + or − for water, **When** a water message is selected, **Then** priority on add is goal reached, then half of goal (rounded up), then add; on remove is dropped-below-goal (only if state actually fell from water-animated to normal) else one glass less; the message shows for `waterMessageDuration` (4 seconds) then the state message returns.
 6. **Given** animated only because of water (base normal), **When** the goal is reached, **Then** the bubble shows a goal-reached water message, not the animated-by-classes bank.
 7. **Given** no classes ever and new-user messages not yet shown, **When** Home appears, **Then** a new-user message shows once (ahead of midday and state); it does not show again after it has been shown or after classes exist.
 8. **Given** local time is after 12:00, today’s glasses are zero, the midday message was not shown today, and new-user is not eligible (already shown or classes exist), **When** Home appears, **Then** the no-glasses-at-midday message shows once that day ahead of the state message (no notification).
@@ -128,11 +128,11 @@ The user changes the active discipline from the Home chip and a single-selection
 
 **Acceptance Scenarios**:
 
-1. **Given** two or more selected disciplines, **When** Home is shown, **Then** a discipline chip shows the current (last used if still selected, otherwise first selected; or first selected if none remembered) discipline.
+1. **Given** two or more selected disciplines, **When** Home is shown, **Then** a discipline chip shows the current (last used if still selected, otherwise first selected in catalog order; or first selected in catalog order if none remembered) discipline.
 2. **Given** the chip is visible, **When** the user taps it, **Then** a floating translucent single-selection sheet lists the user’s selected disciplines.
 3. **Given** the sheet is open, **When** the user selects another discipline, **Then** that discipline becomes current for the next class log and is remembered as last used, even if the user leaves Home without logging a class.
 4. **Given** exactly one selected discipline, **When** Home is shown, **Then** the discipline chip is hidden.
-5. **Given** a remembered last-used discipline that is no longer in the user’s selected disciplines, **When** Home resolves the current discipline, **Then** it uses the first selected discipline for the chip (if shown) and for the next class log.
+5. **Given** a remembered last-used discipline that is no longer in the user’s selected disciplines, **When** Home resolves the current discipline, **Then** it uses the first selected discipline in catalog order for the chip (if shown) and for the next class log.
 6. **Given** a previously logged class, **When** the user later changes only that class’s discipline (out of scope here, History), **Then** that class’s board element remains the one fixed at registration time (behavior constraint for this feature’s stored element).
 
 ---
@@ -165,9 +165,9 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 
 **Acceptance Scenarios**:
 
-1. **Given** no network and no cached remote overrides, **When** Home calculates state and stage, **Then** defaults apply: animated threshold 2 classes, window 7 days, down at 4 days, lazy at 7 days, stage change at 10 classes, default water goal 8 glasses.
-2. **Given** valid remote overrides for those values, **When** Home recalculates, **Then** the overridden values are used.
-3. **Given** invalid remote values, **When** rules are applied, **Then** each invalid value is replaced by its default.
+1. **Given** no network and no cached remote overrides, **When** Home calculates state and stage, **Then** defaults apply: animated threshold 2 classes, window 7 days, downDays 4, lazyDays 7 (active band derived as `daysSinceLastClass < downDays` → 0…3 days), stage change at 10 classes, default water goal 8 glasses. There is no separate Remote Config field for the active band.
+2. **Given** valid remote overrides for those values (including `downDays >= 1` and `downDays < lazyDays`), **When** Home recalculates, **Then** the overridden values are used and the active band remains `daysSinceLastClass < downDays`.
+3. **Given** invalid remote values (per field, or the pair `downDays < 1` or `downDays >= lazyDays`), **When** rules are applied, **Then** each invalid value is replaced by its in-app default (invalid down/lazy pair → both `downDays` and `lazyDays` defaults).
 4. **Given** the user’s profile has a water goal between 4 and 16, **When** water UI and messages run, **Then** that goal is used for fraction text, half, and goal-reached (Settings editing of the goal is out of scope for this feature).
 
 ---
@@ -183,12 +183,12 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **Glasses above water goal**: Bottle fill stays visually full; fraction text shows true count over goal; + remains allowed.
 - **State change after a class is registered**: Pet art, stage line, and eligible messages update immediately after the log (including return-after-lazy and stage-change events when they apply).
 - **First launch with no classes**: Normal state, empty tatami (outlined cells), new-user message eligible once, water at 0/goal, main button ready; no weekly goal pressure.
-- **Undo last class that caused stage up**: Stage reached does not go down; state recalculates from remaining classes. The stage-change message shows once per stage reached. Undo and re-registering the class that reached the threshold does not show it again.
+- **Undo last class that caused stage up**: Stage reached does not go down; state recalculates from remaining classes. The stage-change message shows once per stage reached (once-flag per stage). Undo and re-registering the class that reached the threshold does not show it again.
 - **Only one selected discipline**: Discipline chip hidden; logging still uses that discipline.
-- **Last-used discipline no longer selected**: Resolve to the first selected discipline for chip and next class log.
-- **Bubble closed then state changes**: Bubble may show again for the new state/day rules; water taps always can reopen it for ~4 s.
+- **Last-used discipline no longer selected**: Resolve to the first selected discipline in catalog order for chip and next class log.
+- **Bubble closed then state changes**: Bubble may show again for the new state/day rules; water taps always can reopen it for `waterMessageDuration` (4 s).
 - **New-user and midday both eligible**: Show new-user only for that Home open; midday may appear on a later open the same day after new-user is no longer eligible.
-- **Second tap in the same hour**: No class is registered; a short system notice is shown; Undo is not offered. The same-hour rejection notice does not cancel or hide the Undo of the previous class while its 5 s window is open.
+- **Second tap in the same hour**: No class is registered; toast `home.notice.alreadyLoggedThisHour` (2.5 s, no action); Undo is not offered. The same-hour rejection toast does not cancel or hide the Undo of the previous class while its 5 s window is open.
 - **Classes at 14:59 and 15:00**: Both are accepted (different local clock hours).
 - **Undo frees the hour**: After undoing the last class, a tap in the same local clock hour registers a class again.
 
@@ -201,36 +201,36 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 - **FR-003**: After each successful class registration from Home, the character MUST bounce (respecting Reduce Motion), the day’s element MUST appear on a tatami cell, and Undo MUST be available for 5 seconds for that last registration only. Sources: scope §3, §6 Interactions; domain UndoClass behavior.
 - **FR-004**: Several classes on the same local day MUST count, at most one per local clock hour. Sources: scope §3; stored values Class registration limit.
 - **FR-005**: Classes for previous days MUST NOT be addable from Home. Sources: scope §3.
-- **FR-006**: Pet state MUST be recalculated (never stored as source of truth) using: lazy (≥7 days without class), down (4–6 days without class), animated (last class ≤3 days ago and ≥2 classes in last 7 days), normal (last class ≤3 days ago and <2 classes in last 7 days); new user with no classes starts normal. Sources: scope §4; domain PetStateCalculator behavior.
+- **FR-006**: Pet state MUST be recalculated (never stored as source of truth) from `daysSinceLastClass` and `RulesConfig` thresholds: **lazy** if `daysSinceLastClass >= lazyDays`; **down** if `downDays <= daysSinceLastClass < lazyDays`; **active** band if `daysSinceLastClass < downDays` (not a stored or Remote Config constant — derived only), where active is **animated** when classes in `windowDays` ≥ `animatedThreshold`, else **normal**; new user with no classes starts normal. With defaults (`downDays` 4, `lazyDays` 7) the active band is 0…3 days. Sources: scope §4; domain PetStateCalculator behavior.
 - **FR-007**: Meeting today’s water goal MUST raise normal to animated for that day only; water MUST NEVER lower state except by undoing that water-based raise when glasses fall below the goal; each glass alone MAY cause a short bounce without changing state. Sources: scope §4.
-- **FR-008**: Stage MUST rise with accumulated classes (stage 1→2 at 10 classes by default), MUST never go down, and MUST keep the highest stage reached even if classes are undone. Visible names: stage 1 and stage 2 as defined by the message bank / scope (stage 3 out of v1). Sources: scope §4; message bank Stages; domain StageCalculator behavior.
+- **FR-008**: Stage MUST rise with accumulated classes (stage 1→2 at 10 classes by default), MUST never go down, and MUST keep the highest stage reached even if classes are undone. The stage-change message MUST show once per stage reached (once-flag per stage in message rotation storage); Undo and re-registering the threshold class MUST NOT show it again. Visible names: stage 1 and stage 2 as defined by the message bank / scope (stage 3 out of v1). Sources: scope §4; message bank Stages; domain StageCalculator behavior.
 - **FR-009**: Character appearance MUST reflect current stage and state (four states × two stages in v1). Sources: assets pet states and stages; domain catalogs.
 - **FR-010**: Home water controls MUST be + and − inside the board card only (no separate water action); each glass MUST be an individual timed event; only today’s glasses are added or removed; water resets at local midnight; no glass count or time-of-day limit. Sources: scope §3, §6 Interactions.
 - **FR-011**: The bottle MUST always be visible on Home, fill when adding, drain when removing, and show today’s count over goal; when today’s glasses exceed the goal, visual fill MUST stay at full while the fraction text MAY exceed the goal (e.g. 10/8). Sources: scope §3, §6 Board.
 - **FR-012**: Day for classes, water, messages, and “today” MUST be the device’s local calendar day. Sources: scope §3, §4; message bank Logic rules.
 - **FR-013**: Board element for a class MUST depend on that class’s local date, rotate on a weekly cycle so the same local date yields the same element on every device, and MUST NOT change when the class’s discipline changes. Sources: stored values Board element rotation (wins over scope §6 fixed weekday mapping and assets day table); scope §6 Board elements (discipline change does not change element).
 - **FR-014**: Tatami on Home MUST use a 3-column grid, start at 1 row, grow by rows as needed, cap at 12 cells, show "+N" beyond the cap, show empty outlined cells when empty, and derive layout from today’s class count (not stored). Sources: scope §6 Board; domain BoardLayout behavior.
-- **FR-015**: Speech bubble MUST support state messages (once per state and local day, rotation without repeat until bank exhausted; (T) normal messages only with no class today), class events (return after lazy; stage change), water messages (~4 s then return to state message; add priority goal → half → add; remove priority dropped-below-goal → remove), and ambient messages (new user once; no glasses at midday after 12:00 local once per day). On Home open, when more than one non-water message is eligible, priority MUST be new-user → midday → state (class-event messages still take precedence when their trigger just fired). Sources: message bank Logic rules and groups; scope §6 Interactions; domain Messages behavior.
+- **FR-015**: Speech bubble MUST support state messages (once per state and local day, rotation without repeat until bank exhausted; (T) normal messages only with no class today), class events (return after lazy; stage change), water messages (Presentation constant `waterMessageDuration` = 4 seconds, then return to state message; add priority goal → half → add; remove priority dropped-below-goal → remove), and ambient messages (new user once; no glasses at midday after 12:00 local once per day). Non-water message priority MUST be: class-event (return or stage) > new-user > midday > state message. Sources: message bank Logic rules and groups; scope §6 Interactions; domain Messages behavior.
 - **FR-016**: Closing the bubble with X MUST hide it until pet state or local day changes, except water messages which MUST reopen it. Sources: scope §6 Interactions [PROPOSED] Bubble X; message bank Logic rules.
 - **FR-017**: Messages MUST be first person, MUST NOT use the nickname, MUST exist in Spanish and English, and MUST follow content rules (sarcasm at actions; no guilt/punishment/mockery; no work/office/clothing; pet does not die). Sources: scope §5; message bank Voice rules.
 - **FR-018**: Nickname (optional, max 10 characters, not translated) and stage line MUST show under the character when a nickname exists; omit the nickname line when empty. Sources: scope §6 Nickname, Home.
-- **FR-019**: Discipline chip and sheet MUST remember last used discipline for logging; selecting a discipline in the sheet MUST persist it immediately, even if no class is logged; if none is remembered, or the remembered value is not among the user’s selected disciplines, Home MUST use the first selected discipline; chip hidden when only one discipline is selected; sheet is floating, translucent, single selection. Sources: scope §6 Home, Sheet; stored values Last used discipline; mockups Discipline sheet.
+- **FR-019**: Discipline chip and sheet MUST remember last used discipline for logging; selecting a discipline in the sheet MUST persist it immediately, even if no class is logged; if none is remembered, or the remembered value is not among the user’s selected disciplines, Home MUST use the **first selected in catalog order**; chip hidden when only one discipline is selected; sheet is floating, translucent, single selection. Sources: scope §6 Home, Sheet; stored values Last used discipline; mockups Discipline sheet.
 - **FR-020**: Class logging and water add/remove MUST work offline and MUST NOT wait for the network to update Home. Sources: scope §3.
-- **FR-021**: Rule numeric values (animated threshold, window days, down days, lazy days, classes for stage change, default water goal) MUST be remotely configurable with the defaults in FR-008 and User Story 7, MUST work offline with defaults, and invalid remote values MUST fall back to defaults. Sources: scope §4 Configurable values; domain RulesConfig behavior.
+- **FR-021**: Rule numeric values (animated threshold, window days, down days, lazy days, classes for stage change, default water goal) MUST be remotely configurable with the defaults in FR-008 and User Story 7, MUST work offline with defaults, and invalid remote values MUST fall back to in-app defaults. There is **no** Remote Config field for the active band (it is derived: `daysSinceLastClass < downDays`). If Remote Config returns `downDays < 1` or `downDays >= lazyDays`, the in-app defaults for that pair MUST be used. Sources: scope §4 Configurable values; domain RulesConfig behavior.
 - **FR-022**: All Home motion for bounce, bottle, element appearance, tatami growth, and state crossfade MUST respect Reduce Motion (fade or no motion). Sources: scope §6 animation note / art direction; presentation Reduce Motion behavior; mockups Reduce Motion notes.
 - **FR-023**: Visible Home and message texts MUST ship in Spanish and English. Sources: scope §2 / §3 languages; message bank.
-- **FR-024**: When a class registration is rejected because a class already exists in the current local clock hour, Home MUST show a short system notice from the catalog in Spanish and English; the notice MUST NOT be a character message. Sources: stored values Class registration limit.
+- **FR-024**: When a class registration is rejected because a class already exists in the current local clock hour, Home MUST show a short system toast using catalog key `home.notice.alreadyLoggedThisHour` (Spanish and English); auto-dismiss after 2.5 s; no action button; no Undo for that rejection; the notice MUST NOT be a character message. Sources: stored values Class registration limit.
 
 ### Key Entities
 
 - **Class log**: One training registration; local date/time; discipline; fixed board element identity for that log; at most one per local clock hour of its day; counts toward today’s board, state, and stage.
 - **Water glass**: One timed drink event for a local day; today’s set drives bottle UI and water-based animated state.
-- **Pet status**: Derived state (animated, normal, down, lazy) plus stage reached (1 or 2 in v1) and optional nickname for display.
+- **Pet status**: Derived state (animated, normal, down, lazy) from `daysSinceLastClass` vs `downDays`/`lazyDays` (active band = `days < downDays`, not a constant) plus stage reached (1 or 2 in v1) and optional nickname for display.
 - **Today’s board**: Tatami layout for today’s class logs plus bottle for today’s glasses; layout computed from counts.
 - **Board element**: One of seven training objects assigned to a class from its local date via weekly rotation; shared across disciplines in v1.
-- **Message selection**: Chosen message group and index for bubble display (state, event, water, ambient) with rotation and once-per-day/once-ever flags.
+- **Message selection**: Chosen message group and index for bubble display (state, event, water, ambient) with rotation, once-per-day/once-ever flags, and once-flag per stage reached; non-water priority: class-event (return or stage) > new-user > midday > state.
 - **Rules configuration**: Tunable thresholds and default water goal, with offline defaults.
-- **Last discipline**: Remembered discipline for the next Home class log among the user’s selected disciplines; if missing or not selected, resolve to the first selected discipline.
+- **Last discipline**: Remembered discipline for the next Home class log among the user’s selected disciplines; if missing or not selected, resolve to the first selected in catalog order.
 
 ## Success Criteria *(mandatory)*
 
@@ -249,7 +249,7 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 ## Assumptions
 
 - Spec 001 has already delivered the user to Home with a completed onboarding profile (selected disciplines, optional nickname, water goal in range or default).
-- Personal water goal editing lives in Settings (out of scope); this feature reads the profile goal when present and otherwise uses the default of 8.
+- Personal water goal editing lives in Settings (out of scope); this feature reads the profile goal when present and otherwise uses `RulesConfig.default.waterGoalDefault` (8).
 - Invented timing targets: SC-001 and SC-002 use a 2-second perceived update budget; sources require immediacy/offline optimism but do not define a numeric latency KPI.
 - Invented quality targets: SC-003 95%, SC-008 90%; sources do not define pilot recognition or task-success percentages.
 - Bubble X behavior marked [PROPOSED] in scope §6 is treated as decided for this feature, consistent with the message bank (water may reopen a closed bubble).
@@ -261,7 +261,7 @@ Thresholds that drive state, stage, and the default water goal come from remote 
 
 ## Out of Scope
 
-- History screen content, log sheet, editing or deleting classes outside the 5-second Undo (spec 003). Placeholder History shell reachable from the tab bar is in scope for this feature.
+- History screen content, log sheet, editing or deleting classes outside the 5-second Undo, and `ChangeClassDiscipline` (spec 003). `DeleteClass` Domain use case stays in 002 because Undo needs it. Placeholder History shell reachable from the tab bar is in scope for this feature.
 - Settings content, reminder configuration, water goal editing UI, account actions, minimum-version lock screen (spec 004). Placeholder Settings shell reachable from the tab bar is in scope for this feature.
 - Account, splash, intro, and onboarding (spec 001).
 - Stage 3, store of elements, board themes beyond tatami, elements per discipline, weekly training goal, guest mode.
