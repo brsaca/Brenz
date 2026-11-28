@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-27
 
-**Status**: Draft
+**Status**: Ready for implementation
 
 **Input**: User description: "History tab: current week, chosen day's tatami and cards, and log sheet to change discipline or delete a class. Replaces the History shell left by spec 002."
 
@@ -48,7 +48,7 @@ A signed-in user opens History and sees only the current week (Monday through Su
 
 ### User Story 2 - Delete a class from the tatami (Priority: P1)
 
-The user taps a filled tatami cell, confirms deletion, and the class is removed. The board, class totals, and pet state refresh immediately. The stage already reached does not go down. Offline deletion applies at once.
+The user taps a filled tatami cell, confirms deletion, and the class is removed. The board, class totals, and pet state refresh immediately. The stage already reached does not go down. Offline deletion applies at once. Full ~2.5 s class-deleted timing (6d) belongs to US5; this story only requires that Reduce Motion skips any success animation and the sheet still closes after delete.
 
 **Why this priority**: Correcting a wrong log is essential in the gym; stage must never punish a correction.
 
@@ -61,7 +61,7 @@ The user taps a filled tatami cell, confirms deletion, and the class is removed.
 3. **Given** the confirmation is shown, **When** the user chooses Cancel, **Then** the sheet returns to the log sheet without deleting the class.
 4. **Given** the confirmation is shown, **When** the user confirms Delete, **Then** the class is removed, History refreshes without that log, the tatami returns to the number of rows needed (minimum three), the Classes card total drops by one, the pet state is recalculated from remaining classes, and the stage reached is unchanged.
 5. **Given** the device is offline, **When** the user confirms Delete, **Then** the same immediate refresh occurs without requiring network.
-6. **Given** Reduce Motion is on, **When** the user confirms Delete, **Then** no class-deleted animation plays and the sheet still closes after the delete completes.
+6. **Given** Reduce Motion is on, **When** the user confirms Delete, **Then** no class-deleted animation plays and the sheet still closes after the delete completes (full 6d timing is US5).
 7. **Given** a day has a class in a given local clock hour, **When** the user deletes that class, **Then** that hour is free again for a new registration elsewhere; no History action registers a class.
 
 ---
@@ -97,7 +97,7 @@ For the chosen day, the user sees Classes and Water cards, each with a total and
 1. **Given** a chosen day with classes logged at different hours, **When** the Classes card is shown, **Then** it shows the day's class total and a 3-hour block chart covering 6a, 9a, 12p, 3p, 6p, and 9p, with each log counted in exactly one half-open block (`[6–9)`, `[9–12)`, `[12–15)`, `[15–18)`, `[18–21)`, `[21–24)`; times `00:00–05:59` in 6a).
 2. **Given** a chosen day with water glasses logged at different hours, **When** the Water card is shown, **Then** it shows the day's glass total and the same 3-hour block chart structure and mapping rules as Classes.
 3. **Given** History's Water card for any day, **When** the user views it, **Then** there is no event list and no control to add or remove glasses.
-4. **Given** a log at a local time before 06:00, **When** the day chart is shown, **Then** that log contributes to the 6a block (and still to the day total).
+4. **Given** a log at a local time before 06:00, **When** the day chart is shown, **Then** that log contributes to the 6a block (and still to the day total) per **FR-007**.
 
 ---
 
@@ -127,7 +127,7 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - **Device time zone change**: "Today", past, future, and week membership follow the device's current local calendar; after a time zone change, the week bar and day labels re-evaluate against the new local day without rewriting stored log times.
 - **Change discipline to the same value**: Save remains inactive; no write occurs.
 - **Tap empty tatami cell**: No log sheet opens; nothing is edited or deleted.
-- **Log before 06:00**: A class or water log with local time `00:00–05:59` still counts in the day total and appears in the 6a chart block.
+- **Log before 06:00**: A class or water log with local time `00:00–05:59` still counts in the day total and appears in the 6a chart block (same rule as **FR-007**).
 - **Close log sheet without saving**: Dismissing with the close control discards an unsaved discipline selection and leaves the class unchanged.
 - **Delete while viewing another day**: After delete, the user remains on the same chosen day with refreshed board and cards.
 - **No character message on delete**: Deleting a class does not trigger a message from the message bank (no delete-specific message exists).
@@ -156,13 +156,13 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - **FR-018**: Tapping an empty tatami cell MUST NOT open the log sheet. *(Source: implied by scope §6 Log sheet "tapping a tatami cell" for a log; edge case mandated for this feature)*
 - **FR-019**: Closing the log sheet without saving MUST discard unsaved discipline selection. *(Source: mockups 6b close control; Log sheet rules—only Save updates discipline)*
 - **FR-020**: Deleting a class MUST NOT show a character message (no delete reaction in the message bank). *(Source: message-bank review; Home messages are out of this feature)*
-- **FR-021**: A day has at most one class per local clock hour; the rule is enforced when a class is registered (spec 002). Classes of a day MUST be ordered by registration timestamp ascending, then by log id ascending, because two devices can create two classes in one hour while offline. *(Source: stored-values Class registration limit; Clarifications 2026-11-27; spec 002)*
+- **FR-021**: Hour-limit enforcement remains in 002. History orders day classes by `registeredAt` ascending, then `id` ascending, for the board and overflow. *(Source: stored-values Class registration limit; Clarifications 2026-11-27; spec 002)*
 
 ### Key Entities
 
 - **Week day cell**: One day in the current Monday–Sunday week; states: current, past-with-training, past-without-training, future.
 - **Day view**: Chosen day's label, tatami occupancy, Classes summary, Water summary.
-- **Class log**: A single training entry with local date, time, discipline, and fixed board element for that date; at most one per local clock hour on a given day; editable discipline only; deletable from History when shown as a filled tatami cell (earliest twelve by local time; later ones overflow behind `+N`).
+- **Class log**: A single training entry with local date, time, discipline, and fixed board element for that date; at most one per local clock hour on a given day; editable discipline only; deletable from History when shown as a filled tatami cell (earliest twelve by registration timestamp (`registeredAt`) ascending, then log id ascending; later ones overflow behind `+N`).
 - **Water day summary**: Aggregate glasses for the chosen day, charted by the same half-open 3-hour blocks as Classes (including pre-06:00 in 6a); not editable from History.
 - **Hour block**: One of six day chart buckets labeled 6a / 9a / 12p / 3p / 6p / 9p; assignment uses local wall time and the half-open windows in FR-007.
 - **Pet status**: Derived state from remaining class attendance (and water rules elsewhere); refreshed after delete; stage reached is stored and never lowered by delete.
@@ -179,7 +179,7 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - **SC-005**: Changing discipline leaves time, date, and element identical to pre-save values in 100% of test runs; Save is inactive whenever the selection equals the stored discipline.
 - **SC-006**: With network disabled, browse, save discipline, and delete each complete with on-screen refresh within 2 seconds of the confirming action (excluding the optional ~2.5 s success animation). *(Assumed latency bound; see Assumptions)*
 - **SC-007**: With Reduce Motion off, the class-deleted sequence is visible for approximately 2.5 seconds (±0.5 s) before the sheet closes; with Reduce Motion on, the sheet closes without that sequence in 100% of test runs.
-- **SC-008**: On a day with more than twelve classes, every tester sees a `+N` indicator for the count beyond twelve, can open only the twelve earliest (by local time) filled cells, cannot open overflow classes via `+N`, and after deletes sees overflow classes promote into filled cells in local-time order until twelve or fewer remain.
+- **SC-008**: On a day with more than twelve classes, every tester sees a `+N` indicator for the count beyond twelve, can open only the twelve earliest by registration timestamp (`registeredAt`) ascending, then log id ascending, cannot open overflow classes via `+N`, and after deletes sees overflow classes promote into filled cells in that same order until twelve or fewer remain.
 - **SC-009**: Fixture days place at most one class per local clock hour, except the tie-break test.
 
 ## Assumptions
@@ -187,7 +187,7 @@ After confirming delete, the sheet shows a short class-deleted success sequence 
 - Spec 002 leaves a navigable History shell that this feature replaces with the full week and day experience; Train (Home) logging and Undo remain owned by spec 002.
 - Default chosen day when opening History is today.
 - At most one class per local clock hour per day. Enforcement is defined in spec 002 and the stored-values document. History orders classes of a day by registration timestamp ascending, then by log id ascending when the offline multi-device exception applies.
-- Discipline chips on the log sheet are the four fixed v1 disciplines; single selection only.
+- Discipline chips on the log sheet are always the four fixed disciplines (`boxing`, `jiu_jitsu`, `muay_thai`, `kickboxing`); single selection only; not filtered by profile `selectedDisciplines`.
 - The ~2.5 s class-deleted duration is the product timing; a longer looping clip in the mockups is for design review only, not the shipped wait.
 - The class-deleted figure copy MUST be correct for today and for any other day and for any remaining count, including zero. The mockup text '0 clases hoy' is a sample only. The plan defines the copy.
 - Scope §6 marks "tapping a past day" as proposed; mockups and the overall History decision treat it as in-scope—this spec follows the mockups and treats past-day selection as required.
