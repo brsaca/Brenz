@@ -1,0 +1,27 @@
+---
+description: Brenz spec decisions for features 001–004. Apply when creating or editing routing, splash, launch marker, Sign Up seed, pet state bands, timing constants, message selection or use case ownership.
+alwaysApply: false
+---
+
+# Brenz spec decisions (001–004)
+
+Source: `docs/architecture/brenz-architecture-spec-decisions.md`. This source wins over domain, data and presentation where they differ. It does not override stored-values.
+
+## Rules
+- Session decides the destination; `hasLaunchedBefore` only picks splash length and Start → Intro.
+- Set `hasLaunchedBefore` once after the first full splash. Never clear `LaunchMarkerStore`.
+- Sign Up seeds `[boxing]` and `lastDiscipline = nil`. Keep "at least 1 discipline".
+- Derive pet bands from Remote Config `downDays`/`lazyDays`; fall back on invalid values.
+- Use the documented timing constants with an injected monotonic clock.
+- Keep Intro uncuttable (no skip, 9 s, Reduce Motion from v1).
+- Sign In format failures → `invalidCredentials`. No "new equals current" in Change Password v1.
+- Own use cases per feature; extend `ProfileRepository`, never duplicate it.
+- Message precedence: class-event > new-user > midday > state. Clear rotation on Sign Out and Delete Account.
+- Domain holds no localized text; use `DayLabelKind`.
+
+## Forbidden
+- Do not add Remote Config keys.
+- Do not store derived values.
+- Do not create a second `firestore.rules`.
+- Do not clear `LaunchMarkerStore` on Sign Out or Delete Account.
+- Do not put localized strings in Domain.
